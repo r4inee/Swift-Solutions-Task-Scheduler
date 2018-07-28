@@ -13,7 +13,11 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.fail;
 
 
-public class MainTest {
+/**
+ * This contains basic unit tests for testing parsing of graph data from different input formats.
+ */
+
+public class InputParserTest {
 
     @Test
     public void testMain() {
