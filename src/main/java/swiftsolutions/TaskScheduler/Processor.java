@@ -20,19 +20,18 @@ public class Processor {
     }
     
     public Long getEndTime(){
-		
     	
     	return _endTime;
     }
     
     public Map<Task, Long[]> getTaskList(){
+
 		
     	
     	return _taskList;
     }
     
-    public void addTask(Task task, int offset){
-    	
+    public void addTask(Task task, int offset){	
     	Long[] startAndLengthTimes = new Long[2];
     	startAndLengthTimes[0] = _endTime + offset;
     	startAndLengthTimes[1] = startAndLengthTimes[1] + task.getProcessTime(); // TODO: 

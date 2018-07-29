@@ -1,9 +1,11 @@
 package swiftsolutions.TaskScheduler;
 
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 /**
  * This class represent a single task which needs to be scheduled and is parsed from nodes of an input graph.
@@ -77,4 +79,5 @@ public class Task {
     private void increaseIngoingEdges(){
         _ingoingEdges++;
     }
+
 }
