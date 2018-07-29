@@ -5,4 +5,7 @@ package swiftsolutions.TaskScheduler;
  */
 public abstract class Schedule {
 
+	
+
+
 }
