@@ -10,32 +10,32 @@ import java.util.Map;
  */
 public class Processor {
     // Represent the current list of tasks it is performing.
-    private Map<Task, int[]> taskList;
+    private Map<Task, int[]> _taskList;
     // Represent the current finish time of this processor
-    private int endTime;
+    private int _endTime;
     
     public Processor(){
     	
-    	taskList = new HashMap<Task, int[]>();
+    	_taskList = new HashMap<Task, int[]>();
     }
     
     public int getEndTime(){
 		
     	
-    	return endTime;
+    	return _endTime;
     }
     
     public Map<Task, int[]> getTaskList(){
 		
     	
-    	return taskList;
+    	return _taskList;
     }
     
     public void addTask(Task task, int offset){
     	
     	int[] startAndLengthTimes = new int[2];
-    	startAndLengthTimes[0] = endTime + offset;
+    	startAndLengthTimes[0] = _endTime + offset;
     	startAndLengthTimes[1] = startAndLengthTimes + task.length; // TODO: 
-    	taskList.put(task, startAndLengthTimes);
+    	_taskList.put(task, startAndLengthTimes);
     }
 }
