@@ -45,6 +45,22 @@ public class Task {
     }
 
     /**
+     * Getter for the process time
+     * @return
+     */
+    public long getProcessTime(){
+        return _processTime;
+    }
+
+    /**
+     * Getter for ingoingEdges
+     * @return
+     */
+    public int getIngoingEdges(){
+        return _ingoingEdges;
+    }
+
+    /**
      * Method that returns the list of all child tasks
      * from this task
      * @return
