@@ -35,7 +35,7 @@ public class Processor {
     	
     	int[] startAndLengthTimes = new int[2];
     	startAndLengthTimes[0] = _endTime + offset;
-    	startAndLengthTimes[1] = startAndLengthTimes + task.length; // TODO: 
+    	startAndLengthTimes[1] = startAndLengthTimes + task.processTime; // TODO: 
     	_taskList.put(task, startAndLengthTimes);
     }
 }
