@@ -27,10 +27,9 @@ public class Processor {
     }
     
     public void addTask(Task task, int offset){
-    	
     	Long[] startAndLengthTimes = new Long[2];
     	startAndLengthTimes[0] = _endTime + offset;
-    	startAndLengthTimes[1] = startAndLengthTimes[1] + task.getProcessTime(); // TODO: 
+    	startAndLengthTimes[1] = startAndLengthTimes[1] + task.getProcessTime(); // TODO:
     	_taskList.put(task, startAndLengthTimes);
     }
 }
