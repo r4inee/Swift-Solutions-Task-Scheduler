@@ -1,6 +1,6 @@
 package swiftsolutions.input;
 
-import swiftsolutions.TaskScheduler.Task;
+import swiftsolutions.taskscheduler.Task;
 
 import java.util.List;
 

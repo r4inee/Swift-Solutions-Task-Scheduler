@@ -1,6 +1,6 @@
-package swiftsolutions.TaskScheduler.BranchAndBound;
+package swiftsolutions.taskscheduler.BranchAndBound;
 
-import swiftsolutions.TaskScheduler.Schedule;
+import swiftsolutions.taskscheduler.Schedule;
 
 public class BNBSchedule extends Schedule {
 }
