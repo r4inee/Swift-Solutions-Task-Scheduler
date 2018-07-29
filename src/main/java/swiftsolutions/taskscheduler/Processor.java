@@ -8,7 +8,7 @@ import java.util.Map;
  */
 public class Processor {
     // Represent the current list of tasks it is performing.
-    private Map<Task, Long[]> _taskList;
+    private Map<swiftsolutions.taskscheduler.Task, Long[]> _taskList;
     // Represent the current finish time of this processor
     private Long _endTime;
     
