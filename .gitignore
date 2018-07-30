@@ -74,3 +74,9 @@ dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
+
+# graph-utils output files
+./graph-utils/log1.txt
+./graph-utils/log2.txt
+./graph-utils/output_mode1/
+./graph-utils/output_mode2/
