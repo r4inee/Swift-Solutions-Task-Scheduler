@@ -1,4 +1,4 @@
-package swiftsolutions.TaskScheduler;
+package swiftsolutions.taskscheduler;
 
 <<<<<<< HEAD
 import java.util.ArrayList;
