@@ -1,4 +1,4 @@
-package swiftsolutions.Input;
+package swiftsolutions.input;
 
 import swiftsolutions.TaskScheduler.Task;
 
