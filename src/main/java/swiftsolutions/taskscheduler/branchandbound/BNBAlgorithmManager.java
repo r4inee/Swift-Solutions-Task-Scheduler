@@ -1,4 +1,4 @@
-package swiftsolutions.taskscheduler.BranchAndBound;
+package swiftsolutions.taskscheduler.branchandbound;
 
 import swiftsolutions.taskscheduler.AlgorithmManager;
 
