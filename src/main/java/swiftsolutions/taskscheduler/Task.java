@@ -1,19 +1,13 @@
 package swiftsolutions.taskscheduler;
 
-<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-=======
->>>>>>> 366f1ab... project skeleton and architecture from meeting 1 (28/07/18)
 /**
  * This class represent a single task which needs to be scheduled and is parsed from nodes of an input graph.
  */
 public class Task {
-
-<<<<<<< HEAD
     private long _processTime;
     private int _ingoingEdges; //Default 0
     private Map<Task,Integer> _childTaskMap = new HashMap<>(); //Used to map a child and the edge weight to the child
@@ -81,6 +75,4 @@ public class Task {
     private void increaseIngoingEdges(){
         _ingoingEdges++;
     }
-=======
->>>>>>> 366f1ab... project skeleton and architecture from meeting 1 (28/07/18)
 }
