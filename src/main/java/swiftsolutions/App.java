@@ -2,10 +2,7 @@ package swiftsolutions;
 
 public class App {
     public static void main(String[] args) {
-        // Process CLI argument (offer a help menu) and set relevant states of program.
-
-        // Parse input File using appropriate InputParser (GXL or DOT)
-
-        // Find Solution using appropriate AlgorithmManager.
+        Context context = Context.getContext();
+        context.start(args);
     }
 }
