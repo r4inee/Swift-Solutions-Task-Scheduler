@@ -1,78 +1,93 @@
 package swiftsolutions.taskscheduler;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 /**
  * This class represent a single task which needs to be scheduled and is parsed from nodes of an input graph.
  */
 public class Task {
-    private long _processTime;
-    private int _ingoingEdges; //Default 0
-    private Map<Task,Integer> _childTaskMap = new HashMap<>(); //Used to map a child and the edge weight to the child
-    private List<Task> _childList = new ArrayList<>(); //Store the children
+    private int taskID;
+    private int processTime;
+    private int numDependency;
+    private Map<Task, Integer> communicationCosts; // Refers to map communication cost with its parents.
 
-    /*
-    Constructor for Task that takes in the process time for the task
+    private Set<Task> childTasks = new HashSet<>(); // Contains all the tasks which has a dependency on the this instance.
+
+    /**
+     * Constructor which takes an unique ID identifying this task and the processing time of the task as input.
+     * @param processTime
      */
-    public Task(long processTime){
-        _processTime = processTime;
+    public Task(int taskID, int processTime){
+        this.taskID = taskID;
+        this.processTime = processTime;
+        this.communicationCosts = new HashMap<>();
     }
 
     /**
      * Method to add a child task to the task
-     * @param childTask
-     * @param edgeWeight
+     * @param task The child task to be added
      */
-    public void addChild(Task childTask, Integer edgeWeight){
-        childTask.increaseIngoingEdges();
-        _childTaskMap.put(childTask,edgeWeight);
-        _childList.add(childTask);
+    public void addChild(Task task, int communicationCost){
+        this.childTasks.add(task);
+        task.addDependency(this, communicationCost);
     }
 
     /**
-     * Method to get the communication time to the task in the input
-     * parameter where the task in the input parameter is a child
-     * of this task
-     * @param nextTask
-     * @return
+     * Method to schedule this task and reduce (relax) dependencies on its children
      */
-    public Integer getCommunicationTime(Task nextTask){
-        return _childTaskMap.get(nextTask);
+    public void scheduleTask() {
+        for (Task task : this.childTasks) {
+            task.removeDependency();
+        }
+    }
+
+    /**
+     * Method for initialising dependency with a communication cost in the child instance.
+     */
+    private void addDependency(Task task, int communicationCost) {
+        this.communicationCosts.put(task, communicationCost);
+        numDependency++;
+    }
+    /**
+     * Method for decrementing dependency count in the child instance after parent has been scheduled.
+     */
+    private void removeDependency() {
+        numDependency--;
+    }
+
+    /**
+     * Getter for obtaining the communication cost with its parent.
+     * @param task The parent of the task.
+     * @return The cost of communication, defaults to 0.
+     */
+    public int getCommunicationCosts(Task task) {
+        if (communicationCosts.keySet().contains(task)) {
+            return communicationCosts.get(task);
+        }
+        return 0;
     }
 
     /**
      * Getter for the process time
      * @return
      */
-    public long getProcessTime(){
-        return _processTime;
+    public int getProcessTime(){
+        return this.processTime;
     }
 
     /**
-     * Getter for ingoingEdges
+     * Getter for getting the unique task ID.
      * @return
      */
-    public int getIngoingEdges(){
-        return _ingoingEdges;
+    public int getTaskID() {
+        return this.taskID;
     }
 
     /**
-     * Method that returns the list of all child tasks
-     * from this task
+     * Getter for getting the  number of dependencies.
      * @return
      */
-    public List<Task> getChildList(){
-        return _childList;
-    }
-
-    /**
-     * Increases the count of ingoing edges to the task.
-     * This is only incremented when the task is added to
-     * a parent task
-     */
-    private void increaseIngoingEdges(){
-        _ingoingEdges++;
+    public int getNumDependency(){
+        return this.numDependency;
     }
 }
