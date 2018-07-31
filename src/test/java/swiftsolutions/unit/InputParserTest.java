@@ -17,8 +17,19 @@ public class InputParserTest {
     @Test
     public void testMain() {
         try {
-            GraphParser parser = new GraphParser(new FileInputStream("src/test/java/swiftsolutions/unit/hi.dot"));
-            System.out.println(parser.getGraphId());
+            GraphParser parser = new GraphParser(
+                    new FileInputStream("src/test/resources/test_graphs/Nodes_7_OutTree.dot"));
+//            parser.getNodes().forEach((s, graphNode) -> {
+//                System.out.println(graphNode.getAttribute("Weight"));
+//                System.out.println(s);
+//            });
+
+            parser.getEdges().forEach((s, graphEdge) -> {
+                System.out.println(graphEdge.getNode1());
+                System.out.println("=>");
+                System.out.println(graphEdge.getNode2());
+                System.out.println(" ");
+            });
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             fail();

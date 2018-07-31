@@ -1,11 +1,10 @@
 package swiftsolutions.interfaces;
 
-import swiftsolutions.exceptions.InputException;
 import swiftsolutions.taskscheduler.Task;
 
-import java.util.List;
+import java.util.Set;
 
 public interface Parser {
 
-    List<Task> parse(String filename) throws Exception;
+    Set<Task> parse(String filename) throws Exception;
 }
