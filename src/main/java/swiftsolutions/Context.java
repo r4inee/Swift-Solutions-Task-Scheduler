@@ -6,10 +6,14 @@ import swiftsolutions.input.DOTInputParser;
 import swiftsolutions.interfaces.parser.ArgumentParser;
 import swiftsolutions.interfaces.parser.InputParser;
 import swiftsolutions.interfaces.output.OutputManager;
+import swiftsolutions.interfaces.taskscheduler.Algorithm;
+import swiftsolutions.interfaces.taskscheduler.AlgorithmFactory;
 import swiftsolutions.output.AppOutputManager;
 import swiftsolutions.output.OutputMessage;
 import swiftsolutions.output.OutputType;
 import swiftsolutions.cli.CLIArgumentParser;
+import swiftsolutions.taskscheduler.Algorithms;
+import swiftsolutions.taskscheduler.SchedulingAlgorithmFactory;
 import swiftsolutions.taskscheduler.Task;
 
 import java.util.HashSet;
@@ -34,11 +38,13 @@ public class Context {
     private OutputManager _outputManager;
     private ArgumentParser _argumentParser;
     private InputParser _inputParser;
+    private AlgorithmFactory _algorithmFactory;
 
 
     private Context() {
         _outputManager = new AppOutputManager();
         _argumentParser = new CLIArgumentParser();
+        _algorithmFactory = new SchedulingAlgorithmFactory();
     }
 
     public OutputManager getOutputManager() {
@@ -63,10 +69,17 @@ public class Context {
                     "Parsed Graph with " + tasks.size() + " tasks"));
         } catch (InputException e) {
             _outputManager.send(new OutputMessage(OutputType.ERROR, e.getMessage()));
+            return;
         }
 
         _outputManager.send(new OutputMessage(OutputType.SUCCESS,
                 "Successfully parsed graph!"));
+
+        int numProcessors = _argumentParser.getProcessors();
+        int numCores = _argumentParser.getCoresOption().getArgs();
+
+        Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND, numProcessors, numCores);
+        algorithm.execute(tasks);
 
     }
 
