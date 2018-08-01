@@ -13,11 +13,11 @@ import java.util.*;
 
 public class DOTInputParser implements InputParser {
 
-    private String filename;
-    private GraphParser parser;
-    private Map<Integer, Task> allTasks;
-    private Map<String, GraphNode> inputNodes;
-    private Map<String, GraphEdge> inputEdges;
+    private String _filename;
+    private GraphParser _parser;
+    private Map<Integer, Task> _allTasks;
+    private Map<String, GraphNode> _inputNodes;
+    private Map<String, GraphEdge> _inputEdges;
 
     /**
      * This is a method which check if the file exist in the location supplied in the constructor or setter.
@@ -26,13 +26,12 @@ public class DOTInputParser implements InputParser {
      */
     @Override
     public Set<Task> parse(String filename) throws InputException {
-        allTasks = new HashMap<>();
+        _allTasks = new HashMap<>();
         try {
-            // Using the digraph parser tool to parse the file.
-            this.filename = filename;
-            this.parser = new GraphParser(new FileInputStream(filename));
-            this.inputNodes = this.parser.getNodes();
-            this.inputEdges = this.parser.getEdges();
+            // Using the digraph _parser tool to parse the file.
+            _parser = new GraphParser(new FileInputStream(_filename));
+            _inputNodes = _parser.getNodes();
+            _inputEdges = _parser.getEdges();
         } catch (FileNotFoundException e) {
             throw new InputException("Input graph file not found");
         }
@@ -40,7 +39,7 @@ public class DOTInputParser implements InputParser {
         parseNodes();
         parseEdges();
 
-        return new HashSet<>(allTasks.values());
+        return new HashSet<>(_allTasks.values());
     }
 
     /**
@@ -49,14 +48,14 @@ public class DOTInputParser implements InputParser {
      */
     private void parseNodes() throws InputException {
         // Looping through each of the nodes
-        for (String nodeName : this.inputNodes.keySet()) {
+        for (String nodeName : _inputNodes.keySet()) {
             Task task;
             try {
                 int id = Integer.parseInt(nodeName);
-                int weight = Integer.parseInt(this.inputNodes.get(nodeName).getAttribute("Weight").toString());
+                int weight = Integer.parseInt(_inputNodes.get(nodeName).getAttribute("Weight").toString());
                 // Creating a new Task object and appending to the map with id as the key.
                 task = new Task(id, weight);
-                allTasks.put(id, task);
+                _allTasks.put(id, task);
             } catch (NumberFormatException e) {
                 throw new InputException("Input graph could not be parsed correctly");
             }
@@ -69,14 +68,14 @@ public class DOTInputParser implements InputParser {
      */
     private void parseEdges() throws InputException {
         // Looping through each of the nodes
-        for (GraphEdge edge : this.inputEdges.values()) {
+        for (GraphEdge edge : _inputEdges.values()) {
             try {
                 int sourceNode = Integer.parseInt(edge.getNode1().getId());
                 int dstNode = Integer.parseInt(edge.getNode2().getId());
-                if ((allTasks.keySet().contains(sourceNode))
-                        && (allTasks.keySet().contains(dstNode))) {
-                    Task parent = allTasks.get(sourceNode);
-                    Task child = allTasks.get(dstNode);
+                if ((_allTasks.keySet().contains(sourceNode))
+                        && (_allTasks.keySet().contains(dstNode))) {
+                    Task parent = _allTasks.get(sourceNode);
+                    Task child = _allTasks.get(dstNode);
                     // Inserting the parent to child dependency.
                     int weight = Integer.parseInt(edge.getAttribute("Weight").toString());
                     parent.addChild(child, weight);
