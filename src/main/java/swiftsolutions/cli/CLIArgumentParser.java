@@ -1,11 +1,8 @@
 package swiftsolutions.cli;
 
-import swiftsolutions.Context;
 import swiftsolutions.cli.options.*;
 import swiftsolutions.exceptions.ArgumentFormatException;
-import swiftsolutions.interfaces.output.OutputManager;
-import swiftsolutions.output.OutputMessage;
-import swiftsolutions.output.OutputType;
+import swiftsolutions.interfaces.parser.ArgumentParser;
 
 import java.util.ArrayList;
 
@@ -13,10 +10,8 @@ import java.util.ArrayList;
 /**
  * Created by Winston on 7/31/2018.
  */
-public class ArgumentParser {
+public class CLIArgumentParser implements ArgumentParser {
 
-    private Context _context;
-    private OutputManager _outputManager;
     private String _file;
     private int _processors;
     private CoresOption _coresOption;
@@ -25,9 +20,7 @@ public class ArgumentParser {
     private DirectoryOption _directoryOption;
     private ArrayList<CLIOption> _options;
 
-    public ArgumentParser(Context context) {
-        _context = context;
-        _outputManager = context.getOutputManager();
+    public CLIArgumentParser() {
         _coresOption = new CoresOption();
         _visualizeOption = new VisualizeOption();
         _outputOption = new OutputOption();
@@ -40,7 +33,7 @@ public class ArgumentParser {
         _options.add(_directoryOption);
     }
 
-    public void handle(String[] args) throws ArgumentFormatException {
+    public void parse(String[] args) throws ArgumentFormatException {
         if (args.length < 2) {
             throw new ArgumentFormatException(
                     "Less arguments than expected, try using -h for help.");
@@ -63,17 +56,6 @@ public class ArgumentParser {
             }
             this.insertOption(flag, optionArgs);
         }
-
-        this._outputManager.send(new OutputMessage(OutputType.DEBUG,
-                "Arguments Parsed: " +
-                        "\nCores: " +
-                        _coresOption.getArgs() +
-                        "\nVisualize: " +
-                        _visualizeOption.getArgs() +
-                        "\nOutput File: " +
-                        _outputOption.getArgs() +
-                        "\nDir: " +
-                        _directoryOption.getArgs()));
     }
 
     private int parseInt(String num, String errMsg) throws ArgumentFormatException{
