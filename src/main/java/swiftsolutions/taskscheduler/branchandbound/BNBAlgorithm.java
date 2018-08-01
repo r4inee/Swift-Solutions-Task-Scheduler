@@ -8,6 +8,7 @@ import swiftsolutions.util.Cloner;
 import swiftsolutions.util.Pair;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class BNBAlgorithm implements Algorithm {
@@ -34,22 +35,14 @@ public class BNBAlgorithm implements Algorithm {
             _optimalSchedule.addTask(task, 0);
             initialUpperBound += task.getProcessTime();
         }
-
-
         dfs(tasks, initialUpperBound, new Schedule(_numProcessors));
-        for (Processor processor : _optimalSchedule.getProcessors()) {
-            System.out.println("---------------");
-            processor.getTaskList().forEach((Task task, Pair<Long, Long> pair) -> {
-                System.out.println("ID: " + task.getTaskID() + " ProcTime: " + task.getProcessTime() + " Start: " + pair.a + " End: " + pair.b);
-            });
-        }
         return _optimalSchedule;
     }
 
     private Set<Task> getAvailableTasks(Set<Task> tasks) {
         Set<Task> availableTasks = new HashSet<>();
         tasks.forEach((Task task) -> {
-            if (task.getNumDependency() == 0) {
+            if (task.getNumDependency() <= 0) {
                 availableTasks.add(task);
             }
         });
@@ -63,9 +56,14 @@ public class BNBAlgorithm implements Algorithm {
         }
 
         long candidateUpperBound = schedule.getCost();
+
         if (tasks.isEmpty() && candidateUpperBound < upperBound) {
             _optimalSchedule = schedule;
             upperBound = candidateUpperBound;
+            return upperBound;
+        }
+
+        if (tasks.isEmpty()) {
             return upperBound;
         }
 
@@ -73,9 +71,13 @@ public class BNBAlgorithm implements Algorithm {
             for (Task task: availableTasks) {
                 Schedule clonedSchedule = _cloner.copy(schedule);
                 Set<Task> clonedTasks = _cloner.copy(tasks);
+                for (Task clonedTask : clonedTasks) {
+                    if (clonedTask.getTaskID() == task.getTaskID()) {
+                        clonedTask.scheduleTask();
+                    }
+                }
                 clonedTasks.remove(task);
                 clonedSchedule.addTask(task, i);
-                task.scheduleTask();
                 upperBound = dfs(clonedTasks, upperBound, clonedSchedule);
             }
         }

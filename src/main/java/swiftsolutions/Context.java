@@ -12,9 +12,8 @@ import swiftsolutions.output.AppOutputManager;
 import swiftsolutions.output.OutputMessage;
 import swiftsolutions.output.OutputType;
 import swiftsolutions.cli.CLIArgumentParser;
-import swiftsolutions.taskscheduler.Algorithms;
-import swiftsolutions.taskscheduler.SchedulingAlgorithmFactory;
-import swiftsolutions.taskscheduler.Task;
+import swiftsolutions.taskscheduler.*;
+import swiftsolutions.util.Pair;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -78,8 +77,17 @@ public class Context {
         int numProcessors = _argumentParser.getProcessors();
         int numCores = _argumentParser.getCoresOption().getArgs();
 
+        this._outputManager.send(new OutputMessage(OutputType.STATUS, "Executing algorithm..."));
+
         Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND, numProcessors, numCores);
-        algorithm.execute(tasks);
+        Schedule outputSchedule = algorithm.execute(tasks);
+
+        _outputManager.send(new OutputMessage(OutputType.SUCCESS,
+                "Successfully ran algorithm!"));
+
+        _outputManager.send(new OutputMessage(OutputType.DEBUG,
+                "Output Graph: \n" + outputSchedule.getOutputString()));
+
 
     }
 

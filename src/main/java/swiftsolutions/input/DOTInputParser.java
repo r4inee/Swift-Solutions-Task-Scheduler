@@ -38,8 +38,6 @@ public class DOTInputParser implements InputParser {
         parseNodes();
         parseEdges();
 
-        System.out.println(_allTasks.get(0).getCommunicationCosts(new Task(1, 1)));
-
         return new HashSet<>(_allTasks.values());
     }
 

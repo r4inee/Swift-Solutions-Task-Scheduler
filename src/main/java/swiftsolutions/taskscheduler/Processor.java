@@ -15,11 +15,11 @@ public class Processor implements Serializable{
     // Represent the current list of tasks it is performing.
     private Map<Task, Pair<Long, Long>> _taskList;
     // Represent the current finish time of this processor
-    private Long _endTime;
+    private long _endTime;
     
     public Processor(){
     	_taskList = new HashMap<Task, Pair<Long, Long>>();
-        _endTime = new Long(0);
+        _endTime = 0;
     }
     
     public Long getEndTime(){
@@ -33,7 +33,12 @@ public class Processor implements Serializable{
     }
     
     public void addTask(Task task, int offset){
-    	long taskStart = _endTime + offset;
+    	long taskStart;
+        if (offset < _endTime) {
+            taskStart = _endTime;
+        } else {
+            taskStart = offset;
+        }
     	_endTime = taskStart + task.getProcessTime();
     	_taskList.put(task, new Pair<Long, Long>(taskStart, _endTime));
     }

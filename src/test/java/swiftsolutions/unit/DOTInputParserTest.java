@@ -37,12 +37,6 @@ public class DOTInputParserTest {
             switch (task.getTaskID()) {
                 case 0:
                     assertEquals(0, task.getNumDependency());
-                    for (Task taskx : allTasks) {
-                        if (taskx.getTaskID() == 1) {
-                            assertEquals(15, task.getCommunicationCosts(taskx));
-                        }
-                    }
-
                     break;
                 case 1:
                     assertEquals(1, task.getNumDependency());

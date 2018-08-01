@@ -68,7 +68,6 @@ public class Task implements Serializable{
      * @return The cost of communication, defaults to 0.
      */
     public int getCommunicationCosts(Task task) {
-        System.out.println(_communicationCosts.size());
         if (_communicationCosts.keySet().contains(task)) {
             return _communicationCosts.get(task);
         }
