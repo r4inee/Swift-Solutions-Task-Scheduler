@@ -18,6 +18,7 @@ public class CLIArgumentParser implements ArgumentParser {
     private VisualizeOption _visualizeOption;
     private OutputOption _outputOption;
     private DirectoryOption _directoryOption;
+    private VerboseOption _verboseOption;
     private ArrayList<CLIOption> _options;
 
     public CLIArgumentParser() {
@@ -25,12 +26,14 @@ public class CLIArgumentParser implements ArgumentParser {
         _visualizeOption = new VisualizeOption();
         _outputOption = new OutputOption();
         _directoryOption = new DirectoryOption();
+        _verboseOption = new VerboseOption();
 
         _options = new ArrayList<>();
         _options.add(_coresOption);
         _options.add(_visualizeOption);
         _options.add(_outputOption);
         _options.add(_directoryOption);
+        _options.add(_verboseOption);
     }
 
     public void parse(String[] args) throws ArgumentFormatException {

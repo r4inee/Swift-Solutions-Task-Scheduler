@@ -13,7 +13,6 @@ import java.util.*;
 
 public class DOTInputParser implements InputParser {
 
-    private String _filename;
     private GraphParser _parser;
     private Map<Integer, Task> _allTasks;
     private Map<String, GraphNode> _inputNodes;
@@ -29,7 +28,7 @@ public class DOTInputParser implements InputParser {
         _allTasks = new HashMap<>();
         try {
             // Using the digraph _parser tool to parse the file.
-            _parser = new GraphParser(new FileInputStream(_filename));
+            _parser = new GraphParser(new FileInputStream(filename));
             _inputNodes = _parser.getNodes();
             _inputEdges = _parser.getEdges();
         } catch (FileNotFoundException e) {
