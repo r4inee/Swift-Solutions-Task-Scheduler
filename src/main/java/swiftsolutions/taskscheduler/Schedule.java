@@ -14,32 +14,26 @@ import java.util.Set;
 public class Schedule implements Serializable{
 
 	private Processor[] _processors;
-	private boolean _initialTask;
-	private int _activeProcessor;
-	
+
 	public Schedule(int numProcessors){
 		_processors = new Processor[numProcessors];
 		for (int i = 0; i < numProcessors; i++) {
 			_processors[i] = new Processor();
 		}
-		_initialTask = true;
 	}
 	
 	public void addTask(Task task, int processorNumber){
-		System.out.println("Task: " + task.getTaskID() + " Proc: " + processorNumber);
 		long offset = 0;
-		if (!_initialTask) {
-			for (Task parent : task.getParentTasks()) {
-				Pair<Long, Long> info = findProc(parent);
-				if (info.a != processorNumber) {
-					System.out.println(parent.getCommunicationCosts(task) + "com");
-				}
+		for (Task parent : task.getParentTasks()) {
+			Pair<Long, Long> info = findProc(parent);
+			long tmpOffset = info.b;
+			if (processorNumber != info.a) {
+				tmpOffset += task.getCommunicationCosts(parent);
 			}
-		} else {
-			_initialTask = false;
+			if (tmpOffset > offset) {
+				offset = tmpOffset;
+			}
 		}
-		_activeProcessor = processorNumber;
-		System.out.println("Offset: " + offset);
 		_processors[processorNumber].addTask(task, (int)offset);
 	}
 
@@ -74,6 +68,22 @@ public class Schedule implements Serializable{
 
 	public Processor[] getProcessors() {
 		return _processors;
+	}
+
+	public String getOutputString() {
+		String output = "";
+		for (int i = 0; i < _processors.length; i++) {
+			output += "-------" + i + "-------\n";
+			Map<Task, Pair<Long, Long>> taskList = _processors[i].getTaskList();
+			Set<Task> tasks = taskList.keySet();
+			for (Task task : tasks) {
+				Pair<Long, Long> info = taskList.get(task);
+				output += "ID: " + task.getTaskID() + " ProcTime: " + task.getProcessTime()
+						+ " Start: " + info.a + " End: " + info.b + "\n";
+			}
+		}
+
+		return output;
 	}
 
 }
