@@ -44,6 +44,7 @@ public class Context {
         _outputManager = new AppOutputManager();
         _argumentParser = new CLIArgumentParser();
         _algorithmFactory = new SchedulingAlgorithmFactory();
+        _inputParser = new DOTInputParser();
     }
 
     public OutputManager getOutputManager() {
@@ -51,6 +52,7 @@ public class Context {
     }
 
     public void start(String args[]) {
+        long start = System.currentTimeMillis();
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Parsing arguments..."));
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Starting program..."));
 
@@ -60,10 +62,10 @@ public class Context {
             _outputManager.send(new OutputMessage(OutputType.ERROR, e.getMessage()));
             return;
         }
-        DOTInputParser graphParser = new DOTInputParser();
-        Set<Task> tasks = new HashSet<>();
+
+        Set<Task> tasks;
         try {
-            tasks = graphParser.parse(_argumentParser.getFile());
+            tasks = _inputParser.parse(_argumentParser.getFile());
             _outputManager.send(new OutputMessage(OutputType.DEBUG,
                     "Parsed Graph with " + tasks.size() + " tasks"));
         } catch (InputException e) {
@@ -82,13 +84,13 @@ public class Context {
         Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND, numProcessors, numCores);
         Schedule outputSchedule = algorithm.execute(tasks);
 
+        long end = System.currentTimeMillis();
+
         _outputManager.send(new OutputMessage(OutputType.SUCCESS,
-                "Successfully ran algorithm!"));
+                "Successfully ran algorithm in " + (end - start) + "ms!"));
 
         _outputManager.send(new OutputMessage(OutputType.DEBUG,
                 "Output Graph: \n" + outputSchedule.getOutputString()));
-
-
     }
 
     public void setOutputManager(OutputManager outputManager) {

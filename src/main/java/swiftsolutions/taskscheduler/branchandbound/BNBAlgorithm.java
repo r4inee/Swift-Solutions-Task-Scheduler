@@ -16,6 +16,7 @@ public class BNBAlgorithm implements Algorithm {
     private int _numProcessors;
     private Cloner _cloner;
     private Schedule _optimalSchedule;
+    private int _bound;
 
     public BNBAlgorithm() {
         _cloner = new Cloner();
@@ -30,12 +31,11 @@ public class BNBAlgorithm implements Algorithm {
     @Override
     public Schedule execute(Set<Task> tasks) {
         // Make a fake "rootTask" and get initial upperBound
-        int initialUpperBound = 0;
         for (Task task : tasks) {
             _optimalSchedule.addTask(task, 0);
-            initialUpperBound += task.getProcessTime();
+            _bound += task.getProcessTime();
         }
-        dfs(tasks, initialUpperBound, new Schedule(_numProcessors));
+        dfs(tasks, _bound, new Schedule(_numProcessors));
         return _optimalSchedule;
     }
 
@@ -49,22 +49,20 @@ public class BNBAlgorithm implements Algorithm {
         return availableTasks;
     }
 
-    private long dfs(Set<Task> tasks, long upperBound, Schedule schedule) {
+    private void dfs(Set<Task> tasks, long upperBound, Schedule schedule) {
         Set<Task> availableTasks = this.getAvailableTasks(tasks);
         if (lowerBound(schedule, tasks) >= upperBound) {
-            return upperBound;
+            return;
         }
 
         long candidateUpperBound = schedule.getCost();
 
-        if (tasks.isEmpty() && candidateUpperBound < upperBound) {
-            _optimalSchedule = schedule;
-            upperBound = candidateUpperBound;
-            return upperBound;
-        }
-
         if (tasks.isEmpty()) {
-            return upperBound;
+            if (candidateUpperBound < upperBound) {
+                _optimalSchedule = schedule;
+                _bound = (int)candidateUpperBound;
+            }
+            return;
         }
 
         for (int i = 0; i < _numProcessors; i++) {
@@ -78,11 +76,10 @@ public class BNBAlgorithm implements Algorithm {
                 }
                 clonedTasks.remove(task);
                 clonedSchedule.addTask(task, i);
-                upperBound = dfs(clonedTasks, upperBound, clonedSchedule);
+                dfs(clonedTasks, _bound, clonedSchedule);
             }
         }
 
-        return upperBound;
     }
 
     private long lowerBound(Schedule schedule, Set<Task> tasks) {
