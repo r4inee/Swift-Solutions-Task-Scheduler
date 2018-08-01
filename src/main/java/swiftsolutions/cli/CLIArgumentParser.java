@@ -46,6 +46,10 @@ public class CLIArgumentParser implements ArgumentParser {
         _processors = parseInt(args[1],
                 "Second argument must be an integer, try using -h for help.");
 
+        if (args.length < 3) {
+            return;
+        }
+
         if (args[2].charAt(0) != '-') {
             throw new ArgumentFormatException("Invalid first flag, try using -h for help.");
         }

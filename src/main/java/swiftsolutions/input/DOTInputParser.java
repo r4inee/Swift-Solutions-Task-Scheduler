@@ -38,6 +38,8 @@ public class DOTInputParser implements InputParser {
         parseNodes();
         parseEdges();
 
+        System.out.println(_allTasks.get(0).getCommunicationCosts(new Task(1, 1)));
+
         return new HashSet<>(_allTasks.values());
     }
 
@@ -78,6 +80,7 @@ public class DOTInputParser implements InputParser {
                     // Inserting the parent to child dependency.
                     int weight = Integer.parseInt(edge.getAttribute("Weight").toString());
                     parent.addChild(child, weight);
+                    child.addParent(parent);
                 } else {
                     throw new InputException("Input graph could not be parsed correctly");
                 }

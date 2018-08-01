@@ -11,6 +11,7 @@ public class CoresOption extends CLIOption<Integer> {
 
     public CoresOption() {
         super("p", 1);
+        _args = 1;
     }
 
     @Override
