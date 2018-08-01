@@ -4,14 +4,14 @@ import com.paypal.digraph.parser.GraphEdge;
 import com.paypal.digraph.parser.GraphNode;
 import com.paypal.digraph.parser.GraphParser;
 import swiftsolutions.exceptions.InputException;
-import swiftsolutions.interfaces.Parser;
+import swiftsolutions.interfaces.parser.InputParser;
 import swiftsolutions.taskscheduler.Task;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.*;
 
-public class DOTInputParser implements Parser {
+public class DOTInputParser implements InputParser {
 
     private String filename;
     private GraphParser parser;
@@ -20,24 +20,17 @@ public class DOTInputParser implements Parser {
     private Map<String, GraphEdge> inputEdges;
 
     /**
-     * Constructor which takes a filename in .dot format to parse.
-     * @param filename
-     */
-    public DOTInputParser(String filename) {
-        this.filename = filename;
-    }
-
-    /**
      * This is a method which check if the file exist in the location supplied in the constructor or setter.
      * @return A set of object representing each of the task needed to be scheduled.
      * @throws InputException
      */
     @Override
-    public Set<Task> parse() throws InputException {
+    public Set<Task> parse(String filename) throws InputException {
         allTasks = new HashMap<>();
         try {
             // Using the digraph parser tool to parse the file.
-            this.parser = new GraphParser(new FileInputStream(this.filename));
+            this.filename = filename;
+            this.parser = new GraphParser(new FileInputStream(filename));
             this.inputNodes = this.parser.getNodes();
             this.inputEdges = this.parser.getEdges();
         } catch (FileNotFoundException e) {

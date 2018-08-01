@@ -15,10 +15,10 @@ public class TaskTest {
 
     @Test
     public void testInit() {
-        DOTInputParser parser = new DOTInputParser("src/test/resources/test_graphs/Nodes_7_OutTree.dot");
+        DOTInputParser parser = new DOTInputParser();
         Set<Task> allTasks = null;
         try {
-            allTasks = parser.parse();
+            allTasks = parser.parse("src/test/resources/test_graphs/Nodes_7_OutTree.dot");
         } catch (InputException e) {
             e.printStackTrace();
             fail();
@@ -41,10 +41,10 @@ public class TaskTest {
 
     @Test
     public void testAddChildrenAndCost() {
-        DOTInputParser parser = new DOTInputParser("src/test/resources/test_graphs/Nodes_7_OutTree.dot");
+        DOTInputParser parser = new DOTInputParser();
         Set<Task> allTasks = null;
         try {
-            allTasks = parser.parse();
+            allTasks = parser.parse("src/test/resources/test_graphs/Nodes_7_OutTree.dot");
         } catch (InputException e) {
             e.printStackTrace();
             fail();
