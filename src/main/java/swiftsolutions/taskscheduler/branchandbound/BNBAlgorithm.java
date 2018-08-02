@@ -1,7 +1,6 @@
 package swiftsolutions.taskscheduler.branchandbound;
 
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
-import swiftsolutions.taskscheduler.Processor;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
 import swiftsolutions.util.Cloner;
@@ -51,29 +50,17 @@ public class BNBAlgorithm implements Algorithm {
     }
 
     private Schedule convertSchedule(BNBSchedule bnbSchedule) {
-        Map<Task, Pair<Long, Long>>[] taskMaps = new Map[_numProcessors];
+        // [task_id -> (processorID, startTime)]
+        Map<Integer, Pair<Integer, Integer>> taskMaps = new LinkedHashMap<>();
         int[][] arraySchedule = bnbSchedule._schedule;
 
-        for (int i = 0; i < taskMaps.length; i++) {
-            taskMaps[i] = new HashMap<>();
-        }
-
         for (int i = 0; i < arraySchedule.length; i++) {
-            long finishTime = arraySchedule[i][1];
-            long startTime = arraySchedule[i][0];
-            long procTime = finishTime - startTime;
-            Pair<Long, Long> startEndTimes = new Pair<>(startTime, finishTime);
-            Task task = new Task(i , (int)procTime);
-            taskMaps[arraySchedule[i][2]].put(task, startEndTimes);
+            int startTime = arraySchedule[i][0];
+            int processor = arraySchedule[i][2];
+            taskMaps.put(i, new Pair<>(processor, startTime));
         }
 
-        Processor[] processors = new Processor[taskMaps.length];
-
-        for (int i = 0; i < taskMaps.length; i++) {
-            processors[i] = new Processor(taskMaps[i], bnbSchedule._procEndTimes[i]);
-        }
-
-        return new Schedule(processors);
+        return new Schedule(taskMaps, arraySchedule.length);
     }
 
     public Set<BNBTask> convertTasks(Set<Task> origTasks) {
