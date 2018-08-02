@@ -1,5 +1,7 @@
 package swiftsolutions.unit.benchmark.test;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,8 +28,9 @@ public class FolderReadBenchmark {
 	@Test
     public void testExample() {
         
-		_benchmarkParser.getNodesCatagory();
-		
-		
+		assertEquals( 3 , _benchmarkParser.getNodesCatagory().keySet().size());
+		assertEquals( 4 , _benchmarkParser.getProcessorCatagory().keySet().size());
+		assertEquals( 14 , _benchmarkParser.getTypeCatagory().keySet().size());
+
     }
 }
