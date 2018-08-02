@@ -32,7 +32,6 @@ public class BNBAlgorithm implements Algorithm {
     public Schedule execute(Set<Task> tasks) {
         // Make a fake "rootTask" and get initial upperBound
         for (Task task : tasks) {
-            _optimalSchedule.addTask(task, 0);
             _bound += task.getProcessTime();
         }
         dfs(tasks, _bound, new Schedule(_numProcessors));
@@ -58,7 +57,7 @@ public class BNBAlgorithm implements Algorithm {
         long candidateUpperBound = schedule.getCost();
 
         if (tasks.isEmpty()) {
-            if (candidateUpperBound < upperBound) {
+            if (candidateUpperBound <= upperBound) {
                 _optimalSchedule = schedule;
                 _bound = (int)candidateUpperBound;
             }
