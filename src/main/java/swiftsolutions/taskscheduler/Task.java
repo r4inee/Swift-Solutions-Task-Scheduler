@@ -15,18 +15,19 @@ public class Task implements Serializable{
     private Map<Task, Integer> _communicationCosts; // Refers to map communication cost with its parents.
     private int _bottomLevel;
 
-    private Set<Task> _childTasks = new HashSet<>(); // Contains all the tasks which has a dependency on the this instance.
-    private Set<Task> _parentTasks = new HashSet<>();
+    private Set<Task> _childTasks; // Contains all the tasks which has a dependency on the this instance.
+    private Set<Task> _parentTasks;
 
     /**
      * Constructor which takes an unique ID identifying this task and the processing time of the task as input.
      * @param processTime
      */
     public Task(int taskID, int processTime){
-        this._taskID = taskID;
-        this._processTime = processTime;
-        this._communicationCosts = new HashMap<>();
+        _taskID = taskID;
+        _processTime = processTime;
+        _communicationCosts = new HashMap<>();
         _parentTasks = new HashSet<>();
+        _childTasks = new HashSet<>();
     }
 
     public Task createCopy() {
@@ -61,7 +62,7 @@ public class Task implements Serializable{
     }
 
     /**
-     * Method for initialising dependency with a communication cost in the child instance.
+     * Method for initialising dependency with a communication cost in the parent instance.
      */
     private void addDependency(Task task, int communicationCost) {
         this._communicationCosts.put(task, communicationCost);

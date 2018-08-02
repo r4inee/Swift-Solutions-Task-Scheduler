@@ -3,91 +3,48 @@ package swiftsolutions.taskscheduler;
 import swiftsolutions.util.Pair;
 
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
- * This abstract class contains information which is used by every type of schedule
+ * This class contains information which represents an optimal schedule outputted by an algorithm.
  */
-public class Schedule implements Serializable{
+public class Schedule {
 
-	private Processor[] _processors;
+	private Map<Integer, Pair<Integer, Integer>> _taskToProcessorMap;
+	private int _numProc;
 
-	public Schedule(int numProcessors){
-		_processors = new Processor[numProcessors];
-		for (int i = 0; i < numProcessors; i++) {
-			_processors[i] = new Processor();
+	public Schedule(Map<Integer, Pair<Integer, Integer>> taskToProcessorMap, int numProc) {
+		_taskToProcessorMap = taskToProcessorMap;
+		_numProc = numProc;
+	}
+
+	public Pair<Integer, Integer> getProcessor(Task task) {
+		return _taskToProcessorMap.get(task.getTaskID());
+	}
+
+	public int getNumProc() {
+		return _numProc;
+	}
+
+	public Map<Integer, ArrayList<Integer>> splitByProcessor() {
+		Map<Integer, ArrayList<Integer>> procMap = new LinkedHashMap<>();
+		for (Integer taskID : _taskToProcessorMap.keySet()) {
+			Integer procID = _taskToProcessorMap.get(taskID).getA();
+			procMap.get(procID).add(taskID);
 		}
-	}
-
-	public Schedule(Processor[] processors) {
-		_processors = processors;
-	}
-	
-	public void addTask(Task task, int processorNumber){
-		long offset = 0;
-		for (Task parent : task.getParentTasks()) {
-			Pair<Long, Long> info = findProc(parent);
-			long tmpOffset = info.b;
-			if (processorNumber != info.a) {
-				tmpOffset += task.getCommunicationCosts(parent);
-			}
-			if (tmpOffset > offset) {
-				offset = tmpOffset;
-			}
-		}
-		_processors[processorNumber].addTask(task, (int)offset);
-	}
-
-	private Pair<Long, Long> findProc(Task task) {
-		for (int i = 0; i < _processors.length; i++) {
-			Map<Task, Pair<Long, Long>> taskList = _processors[i].getTaskList();
-			if (taskList.containsKey(task)) {
-				return new Pair<>((long)i, taskList.get(task).b);
-			}
-		}
-		return new Pair<>(new Long(-1), new Long(-1));
-	}
-
-	public long getIdleTime() {
-		int sum = 0;
-		for (Processor processor : _processors) {
-			sum += processor.getIdleTime();
-		}
-		return sum;
-	}
-
-	public long getCost() {
-		long max = 0;
-		for (Processor processor : _processors) {
-			if (processor.getEndTime() > max) {
-				max = processor.getEndTime();
-			}
-		}
-		return max;
-	}
-
-
-	public Processor[] getProcessors() {
-		return _processors;
+		return procMap;
 	}
 
 	public String getOutputString() {
 		String output = "";
-		for (int i = 0; i < _processors.length; i++) {
-			output += "-------" + i + "-------\n";
-			Map<Task, Pair<Long, Long>> taskList = _processors[i].getTaskList();
-			Set<Task> tasks = taskList.keySet();
-			for (Task task : tasks) {
-				Pair<Long, Long> info = taskList.get(task);
-				output += "ID: " + task.getTaskID() + " ProcTime: " + task.getProcessTime()
-						+ " Start: " + info.a + " End: " + info.b + "\n";
+		Map<Integer, ArrayList<Integer>> procMap = splitByProcessor();
+		for (Integer procID : procMap.keySet()) {
+			output += "==========" + procID + "==========";
+			for (Integer taskID: procMap.get(procID)) {
+				Pair<Integer, Integer> info = _taskToProcessorMap.get(taskID);
+				output += "ID: " + taskID + " Start: " + info.getB() + " Processor: " + info.getA() + "\n";
 			}
 		}
-
 		return output;
 	}
-
 }
