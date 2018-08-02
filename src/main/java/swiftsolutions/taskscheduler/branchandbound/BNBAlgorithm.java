@@ -16,6 +16,7 @@ public class BNBAlgorithm implements Algorithm {
     private Cloner _cloner;
     private BNBSchedule _optimalSchedule;
     private int _bound;
+    private int[] _blMap;
 
     public BNBAlgorithm() {
         _cloner = new Cloner();
@@ -28,8 +29,17 @@ public class BNBAlgorithm implements Algorithm {
 
     @Override
     public Schedule execute(Set<Task> tasks) {
-        // Make a fake "rootTask" and get initial upperBound
+        _blMap = new int[tasks.size()];
+        Set<Task> leafs = tasks.stream().filter((Task task) -> task.getChildTasks().size() == 0).collect(Collectors.toSet());
+        for (Task leaf: leafs) {
+            leaf.updateBottomLevel(leaf.getProcessTime());
+            getBottomLevels(leaf.getParentTasks(), leaf.getProcessTime());
+        }
         Set<BNBTask> convertedTasks = convertTasks(tasks);
+        for (BNBTask task : convertedTasks) {
+            _blMap[task._id] = task._bottomLevel;
+        }
+
 
         for (BNBTask task : convertedTasks) {
             _bound += task._procTime;
@@ -73,6 +83,16 @@ public class BNBAlgorithm implements Algorithm {
         }
         return tasks;
     }
+
+    private void getBottomLevels(Set<Task> nodes, int currBottomLevel) {
+        for (Task node: nodes) {
+            node.updateBottomLevel(currBottomLevel + node.getProcessTime());
+            if (node.getParentTasks().size() != 0) {
+                getBottomLevels(node.getParentTasks(), currBottomLevel + node.getProcessTime());
+            }
+        }
+    }
+
 
     private Set<BNBTask> getAvailableTasks(Set<BNBTask> tasks) {
         Set<BNBTask> availableTasks = new HashSet<>();
@@ -130,12 +150,15 @@ public class BNBAlgorithm implements Algorithm {
 
 
     private long lowerBound(BNBSchedule schedule, Set<BNBTask> tasks) {
-        long idle = schedule.getIdleTime();
-        long count = 0;
-        for (BNBTask task : tasks) {
-            count += task._procTime;
+        long lowerBound = 0;
+        for (int i = 0; i < schedule._schedule.length; i++) {
+            if (schedule._schedule[i][0] != -1) {
+                if (schedule._schedule[i][0] + _blMap[i] > lowerBound) {
+                    lowerBound = schedule._schedule[i][0] + _blMap[i];
+                }
+            }
         }
-        return (count - idle)/_numProcessors;
+        return lowerBound;
     }
 }
 

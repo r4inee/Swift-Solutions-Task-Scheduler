@@ -15,6 +15,11 @@ public class BNBSchedule implements Serializable{
         _numTasks = numTasks;
         // nodeId[start, end, proc]
         _schedule = new int[_numTasks][3];
+        for (int i = 0; i < _schedule.length; i++) {
+            for (int j = 0; j < _schedule[0].length; j++) {
+                _schedule[i][j] = _schedule[i][j] = -1;
+            }
+        }
         _procEndTimes = new int[numProc];
     }
 
@@ -31,7 +36,6 @@ public class BNBSchedule implements Serializable{
                 scheduleCopy[i][j] = _schedule[i][j];
             }
         }
-
         return new BNBSchedule(_numTasks, scheduleCopy, Arrays.copyOf(_procEndTimes, _procEndTimes.length));
     }
 
@@ -59,6 +63,7 @@ public class BNBSchedule implements Serializable{
         _schedule[task._id][2] = proc;
     }
 
+
     public int getCost() {
         int max = 0;
         for (int procCost : _procEndTimes) {
@@ -72,7 +77,9 @@ public class BNBSchedule implements Serializable{
     public int getIdleTime() {
         int[] procEndTimes = Arrays.copyOf(_procEndTimes, _procEndTimes.length);
         for (int[] task : _schedule) {
-            procEndTimes[task[2]] -= task[1] - task[0];
+            if (task[0] != -1) {
+                procEndTimes[task[2]] -= task[1] - task[0];
+            }
         }
         int count = 0;
         for (int time : procEndTimes) {
@@ -81,4 +88,13 @@ public class BNBSchedule implements Serializable{
         return count;
     }
 
+    @Override
+    public int hashCode() {
+        return Arrays.deepHashCode(_schedule);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return Arrays.deepEquals(_schedule, ((BNBSchedule)obj)._schedule);
+    }
 }

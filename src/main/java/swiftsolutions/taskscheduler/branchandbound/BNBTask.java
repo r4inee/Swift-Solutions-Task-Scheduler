@@ -18,14 +18,16 @@ public class BNBTask implements Serializable{
     int[] _commCost;
     int _id;
     int _numDependency;
+    int _bottomLevel;
 
-    public BNBTask(int id, int[] parents, int[] children, int procTime, int[] commCost, int numDependency) {
+    public BNBTask(int id, int[] parents, int[] children, int procTime, int[] commCost, int numDependency, int bottomLevel) {
         _parents = parents;
         _children = children;
         _procTime = procTime;
         _commCost = commCost;
         _id = id;
         _numDependency = numDependency;
+        _bottomLevel = bottomLevel;
     }
 
     public BNBTask copy() {
@@ -35,7 +37,8 @@ public class BNBTask implements Serializable{
                 _children,
                 _procTime,
                 _commCost,
-                _numDependency
+                _numDependency,
+                _bottomLevel
         );
     }
 

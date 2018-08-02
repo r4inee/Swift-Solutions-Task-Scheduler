@@ -13,6 +13,7 @@ public class Task implements Serializable{
     private int _processTime;
     private int _numDependency;
     private Map<Task, Integer> _communicationCosts; // Refers to map communication cost with its parents.
+    private int _bottomLevel;
 
     private Set<Task> _childTasks = new HashSet<>(); // Contains all the tasks which has a dependency on the this instance.
     private Set<Task> _parentTasks = new HashSet<>();
@@ -120,6 +121,17 @@ public class Task implements Serializable{
     public void offsetId(int offset) {
         _taskID -= offset;
     }
+
+    public void updateBottomLevel(int bottomLevel) {
+        if (bottomLevel > _bottomLevel) {
+            _bottomLevel = bottomLevel;
+        }
+    }
+
+    public int getBottomLevel() {
+        return _bottomLevel;
+    }
+
 
     @Override
     public boolean equals(Object obj) {
