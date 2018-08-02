@@ -52,7 +52,6 @@ public class Context {
     }
 
     public void start(String args[]) {
-        long start = System.currentTimeMillis();
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Parsing arguments..."));
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Starting program..."));
 
@@ -81,6 +80,7 @@ public class Context {
 
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Executing algorithm..."));
 
+        long start = System.currentTimeMillis();
         Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND, numProcessors, numCores);
         Schedule outputSchedule = algorithm.execute(tasks);
 

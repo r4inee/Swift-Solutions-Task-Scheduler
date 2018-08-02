@@ -1,5 +1,7 @@
 package swiftsolutions.taskscheduler;
 
+import swiftsolutions.util.Pair;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -24,6 +26,15 @@ public class Task implements Serializable{
         this._processTime = processTime;
         this._communicationCosts = new HashMap<>();
         _parentTasks = new HashSet<>();
+    }
+
+    public Task createCopy() {
+        Task task = new Task(_taskID, _processTime);
+        _numDependency = task._numDependency;
+        _communicationCosts = task._communicationCosts;
+        _childTasks = task._childTasks;
+        _parentTasks = task._parentTasks;
+        return task;
     }
 
     /**
@@ -100,6 +111,14 @@ public class Task implements Serializable{
 
     public Set<Task> getParentTasks() {
         return _parentTasks;
+    }
+
+    public Set<Task> getChildTasks() { return _childTasks; }
+
+    public Map<Task, Integer> getCommunicationCosts() { return _communicationCosts; }
+
+    public void offsetId(int offset) {
+        _taskID -= offset;
     }
 
     @Override

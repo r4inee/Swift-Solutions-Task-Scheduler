@@ -21,6 +21,11 @@ public class Processor implements Serializable{
     	_taskList = new HashMap<Task, Pair<Long, Long>>();
         _endTime = 0;
     }
+
+    public Processor(Map<Task, Pair<Long, Long>> taskList, long endTime) {
+        _taskList = taskList;
+        _endTime = endTime;
+    }
     
     public Long getEndTime(){
     	return _endTime;
