@@ -21,6 +21,10 @@ public class Schedule implements Serializable{
 			_processors[i] = new Processor();
 		}
 	}
+
+	public Schedule(Processor[] processors) {
+		_processors = processors;
+	}
 	
 	public void addTask(Task task, int processorNumber){
 		long offset = 0;
