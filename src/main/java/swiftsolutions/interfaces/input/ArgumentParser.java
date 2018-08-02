@@ -1,4 +1,4 @@
-package swiftsolutions.interfaces.parser;
+package swiftsolutions.interfaces.input;
 
 import swiftsolutions.cli.options.CoresOption;
 import swiftsolutions.cli.options.OutputOption;

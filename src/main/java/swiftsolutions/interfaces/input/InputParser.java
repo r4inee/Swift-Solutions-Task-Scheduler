@@ -1,4 +1,4 @@
-package swiftsolutions.interfaces.parser;
+package swiftsolutions.interfaces.input;
 
 import swiftsolutions.exceptions.InputException;
 import swiftsolutions.taskscheduler.Task;
