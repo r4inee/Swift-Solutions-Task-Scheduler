@@ -4,6 +4,9 @@ import swiftsolutions.taskscheduler.Schedule;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Stack;
 
 public class BNBSchedule implements Serializable{
 
@@ -90,11 +93,32 @@ public class BNBSchedule implements Serializable{
 
     @Override
     public int hashCode() {
-        return Arrays.deepHashCode(_schedule);
+        Set<Stack<Integer>> schedule = new HashSet<>();
+        Stack<Integer>[] stacks = new Stack[_procEndTimes.length];
+        for (int i = 0; i < stacks.length; i++) {
+            stacks[i] = new Stack<>();
+        }
+        for (int i = 0; i < _schedule.length; i++) {
+            if (_schedule[i][0] != -1) {
+                stacks[_schedule[i][2]].add(i);
+                stacks[_schedule[i][2]].add(_schedule[i][0]);
+            }
+        }
+
+        for(Stack<Integer> stack : stacks) {
+            schedule.add(stack);
+        }
+        return schedule.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        return Arrays.deepEquals(_schedule, ((BNBSchedule)obj)._schedule);
+        if (obj == null) {
+            return false;
+        }
+
+        BNBSchedule other = (BNBSchedule)obj;
+
+        return other.hashCode() == hashCode();
     }
 }

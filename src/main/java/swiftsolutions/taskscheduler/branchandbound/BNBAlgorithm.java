@@ -17,9 +17,11 @@ public class BNBAlgorithm implements Algorithm {
     private BNBSchedule _optimalSchedule;
     private int _bound;
     private int[] _blMap;
+    private Set<BNBSchedule> _seenSchedules;
 
     public BNBAlgorithm() {
         _cloner = new Cloner();
+        _seenSchedules = new HashSet<>();
     }
 
     @Override
@@ -105,9 +107,14 @@ public class BNBAlgorithm implements Algorithm {
     }
 
     private void dfs(Set<BNBTask> tasks, long upperBound, BNBSchedule schedule) {
-        Set<BNBTask> availableTasks = getAvailableTasks(tasks);
         if (lowerBound(schedule, tasks) >= upperBound) {
             return;
+        }
+
+        if (_seenSchedules.contains(schedule)) {
+            return;
+        } else {
+            _seenSchedules.add(schedule);
         }
 
         long candidateUpperBound = schedule.getCost();
@@ -119,6 +126,8 @@ public class BNBAlgorithm implements Algorithm {
             }
             return;
         }
+
+        Set<BNBTask> availableTasks = getAvailableTasks(tasks);
 
         for (int i = 0; i < _numProcessors; i++) {
             for (BNBTask availableTask: availableTasks) {
