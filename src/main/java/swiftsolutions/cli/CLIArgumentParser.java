@@ -2,7 +2,7 @@ package swiftsolutions.cli;
 
 import swiftsolutions.cli.options.*;
 import swiftsolutions.exceptions.ArgumentFormatException;
-import swiftsolutions.interfaces.parser.ArgumentParser;
+import swiftsolutions.interfaces.input.ArgumentParser;
 
 import java.util.ArrayList;
 

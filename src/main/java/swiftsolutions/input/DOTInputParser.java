@@ -4,7 +4,7 @@ import com.paypal.digraph.parser.GraphEdge;
 import com.paypal.digraph.parser.GraphNode;
 import com.paypal.digraph.parser.GraphParser;
 import swiftsolutions.exceptions.InputException;
-import swiftsolutions.interfaces.parser.InputParser;
+import swiftsolutions.interfaces.input.InputParser;
 import swiftsolutions.taskscheduler.Task;
 
 import java.io.FileInputStream;

@@ -3,8 +3,8 @@ package swiftsolutions;
 import swiftsolutions.exceptions.ArgumentFormatException;
 import swiftsolutions.exceptions.InputException;
 import swiftsolutions.input.DOTInputParser;
-import swiftsolutions.interfaces.parser.ArgumentParser;
-import swiftsolutions.interfaces.parser.InputParser;
+import swiftsolutions.interfaces.input.ArgumentParser;
+import swiftsolutions.interfaces.input.InputParser;
 import swiftsolutions.interfaces.output.OutputManager;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.interfaces.taskscheduler.AlgorithmFactory;
@@ -13,9 +13,7 @@ import swiftsolutions.output.OutputMessage;
 import swiftsolutions.output.OutputType;
 import swiftsolutions.cli.CLIArgumentParser;
 import swiftsolutions.taskscheduler.*;
-import swiftsolutions.util.Pair;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
