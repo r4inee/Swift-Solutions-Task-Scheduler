@@ -79,12 +79,12 @@ public class BenchmarkAppRunner {
 			
 			}catch(Exception e) {
 				
-				System.out.println("!!done!!");
+				System.out.println("Graph run failed");
 				
 			}
-			
-			
 		}
+		
+		System.out.println("!!done!!");
 	}
 
 	public Map<String, Long> getOutputs() {
