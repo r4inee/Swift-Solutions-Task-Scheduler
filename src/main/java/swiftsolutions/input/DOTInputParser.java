@@ -25,7 +25,7 @@ public class DOTInputParser implements InputParser {
      */
     @Override
     public Set<Task> parse(String filename) throws InputException {
-        _allTasks = new HashMap<>();
+        _allTasks = new LinkedHashMap<>();
         try {
             // Using the digraph _parser tool to parse the file.
             _parser = new GraphParser(new FileInputStream(filename));

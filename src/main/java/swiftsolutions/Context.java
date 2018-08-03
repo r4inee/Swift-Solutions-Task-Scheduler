@@ -2,13 +2,16 @@ package swiftsolutions;
 
 import swiftsolutions.exceptions.ArgumentFormatException;
 import swiftsolutions.exceptions.InputException;
+import swiftsolutions.exceptions.OutputException;
 import swiftsolutions.input.DOTInputParser;
 import swiftsolutions.interfaces.input.ArgumentParser;
 import swiftsolutions.interfaces.input.InputParser;
 import swiftsolutions.interfaces.output.OutputManager;
+import swiftsolutions.interfaces.output.OutputWriter;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.interfaces.taskscheduler.AlgorithmFactory;
 import swiftsolutions.output.AppOutputManager;
+import swiftsolutions.output.DOTOutputWriter;
 import swiftsolutions.output.OutputMessage;
 import swiftsolutions.output.OutputType;
 import swiftsolutions.cli.CLIArgumentParser;
@@ -36,6 +39,7 @@ public class Context {
     private ArgumentParser _argumentParser;
     private InputParser _inputParser;
     private AlgorithmFactory _algorithmFactory;
+    private OutputWriter _outputWriter;
 
 
     private Context() {
@@ -43,6 +47,7 @@ public class Context {
         _argumentParser = new CLIArgumentParser();
         _algorithmFactory = new SchedulingAlgorithmFactory();
         _inputParser = new DOTInputParser();
+        _outputWriter = new DOTOutputWriter();
     }
 
     public OutputManager getOutputManager() {
@@ -89,6 +94,16 @@ public class Context {
 
         _outputManager.send(new OutputMessage(OutputType.DEBUG,
                 "Output Graph: \n" + outputSchedule.getOutputString()));
+
+        this._outputManager.send(new OutputMessage(OutputType.STATUS, "Writing schedule to file..."));
+
+        try {
+            _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, tasks);
+        } catch (OutputException e) {
+            _outputManager.send(new OutputMessage(OutputType.DEBUG, e.getMessage()));
+        }
+
+        _outputManager.send(new OutputMessage(OutputType.SUCCESS, "Exiting program..."));
     }
 
     public void setOutputManager(OutputManager outputManager) {

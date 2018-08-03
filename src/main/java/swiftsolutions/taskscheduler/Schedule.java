@@ -18,18 +18,13 @@ public class Schedule {
 		_numProc = numProc;
 	}
 
-	public Pair<Integer, Integer> getProcessor(Task task) {
-		return _taskToProcessorMap.get(task.getTaskID());
-	}
-
-	public int getNumProc() {
-		return _numProc;
-	}
-
-	public Map<Integer, ArrayList<Integer>> splitByProcessor() {
+	private Map<Integer, ArrayList<Integer>> splitByProcessor() {
 		Map<Integer, ArrayList<Integer>> procMap = new LinkedHashMap<>();
 		for (Integer taskID : _taskToProcessorMap.keySet()) {
 			Integer procID = _taskToProcessorMap.get(taskID).getA();
+			if (!procMap.containsKey(procID)) {
+				procMap.put(procID, new ArrayList<>());
+			}
 			procMap.get(procID).add(taskID);
 		}
 		return procMap;
@@ -39,12 +34,19 @@ public class Schedule {
 		String output = "";
 		Map<Integer, ArrayList<Integer>> procMap = splitByProcessor();
 		for (Integer procID : procMap.keySet()) {
-			output += "==========" + procID + "==========";
+			output += "==========" + procID + "==========\n";
 			for (Integer taskID: procMap.get(procID)) {
 				Pair<Integer, Integer> info = _taskToProcessorMap.get(taskID);
 				output += "ID: " + taskID + " Start: " + info.getB() + " Processor: " + info.getA() + "\n";
 			}
 		}
 		return output;
+	}
+
+	public Pair<Integer, Integer> getProcessor(Task task) {
+		return _taskToProcessorMap.get(task.getTaskID());
+	}
+	public int getNumProc() {
+		return _numProc;
 	}
 }
