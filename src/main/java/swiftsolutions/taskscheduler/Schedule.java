@@ -1,9 +1,11 @@
 package swiftsolutions.taskscheduler;
 
+import javafx.beans.binding.IntegerBinding;
 import swiftsolutions.util.Pair;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class contains information which represents an optimal schedule outputted by an algorithm.
@@ -19,7 +21,7 @@ public class Schedule {
 	}
 
 	private Map<Integer, ArrayList<Integer>> splitByProcessor() {
-		Map<Integer, ArrayList<Integer>> procMap = new LinkedHashMap<>();
+		Map<Integer, ArrayList<Integer>> procMap = new HashMap<>();
 		for (Integer taskID : _taskToProcessorMap.keySet()) {
 			Integer procID = _taskToProcessorMap.get(taskID).getA();
 			if (!procMap.containsKey(procID)) {
@@ -33,18 +35,27 @@ public class Schedule {
 	public String getOutputString() {
 		String output = "";
 		Map<Integer, ArrayList<Integer>> procMap = splitByProcessor();
+		List<Integer> processors = procMap.keySet().stream().collect(Collectors.toList());
+		Collections.sort(processors);
 		for (Integer procID : procMap.keySet()) {
 			output += "==========" + procID + "==========\n";
-			for (Integer taskID: procMap.get(procID)) {
-				Pair<Integer, Integer> info = _taskToProcessorMap.get(taskID);
-				output += "ID: " + taskID + " Start: " + info.getB() + " Processor: " + info.getA() + "\n";
+
+			List<Pair<Integer, Integer>> taskStartTime = procMap.get(procID)
+					.stream()
+					.map((Integer task) -> {
+						int startTime = _taskToProcessorMap.get(task).getB();
+						return new Pair<Integer, Integer>(task, startTime);
+					}).collect(Collectors.toList());
+			taskStartTime.sort(Comparator.comparing(Pair::getB));
+			for (Pair<Integer, Integer> info: taskStartTime) {
+				output += "ID: " + info.getA() + " Start: " + info.getB() + " Processor: " + procID + "\n";
 			}
 		}
 		return output;
 	}
 
-	public Pair<Integer, Integer> getProcessor(Task task) {
-		return _taskToProcessorMap.get(task.getTaskID());
+	public Pair<Integer, Integer> getProcessor(Integer task) {
+		return _taskToProcessorMap.get(task);
 	}
 	public int getNumProc() {
 		return _numProc;

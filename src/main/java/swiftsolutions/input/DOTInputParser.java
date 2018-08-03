@@ -15,6 +15,7 @@ public class DOTInputParser implements InputParser {
 
     private GraphParser _parser;
     private Map<Integer, Task> _allTasks;
+    private Map<Integer, Integer> _offsetID;
     private Map<String, GraphNode> _inputNodes;
     private Map<String, GraphEdge> _inputEdges;
 
@@ -24,8 +25,9 @@ public class DOTInputParser implements InputParser {
      * @throws InputException
      */
     @Override
-    public Set<Task> parse(String filename) throws InputException {
+    public Map<Integer, Task> parse(String filename) throws InputException {
         _allTasks = new LinkedHashMap<>();
+        _offsetID = new HashMap<>();
         try {
             // Using the digraph _parser tool to parse the file.
             _parser = new GraphParser(new FileInputStream(filename));
@@ -38,7 +40,7 @@ public class DOTInputParser implements InputParser {
         parseNodes();
         parseEdges();
 
-        return new HashSet<>(_allTasks.values());
+        return _allTasks;
     }
 
     /**
@@ -46,6 +48,7 @@ public class DOTInputParser implements InputParser {
      * @throws InputException
      */
     private void parseNodes() throws InputException {
+        int nodeID = 0;
         // Looping through each of the nodes
         for (String nodeName : _inputNodes.keySet()) {
             Task task;
@@ -54,7 +57,9 @@ public class DOTInputParser implements InputParser {
                 int weight = Integer.parseInt(_inputNodes.get(nodeName).getAttribute("Weight").toString());
                 // Creating a new Task object and appending to the map with id as the key.
                 task = new Task(id, weight);
-                _allTasks.put(id, task);
+                _allTasks.put(nodeID, task);
+                _offsetID.put(id, nodeID);
+                nodeID++;
             } catch (NumberFormatException e) {
                 throw new InputException("Input graph could not be parsed correctly");
             }
@@ -69,16 +74,16 @@ public class DOTInputParser implements InputParser {
         // Looping through each of the nodes
         for (GraphEdge edge : _inputEdges.values()) {
             try {
-                int sourceNode = Integer.parseInt(edge.getNode1().getId());
-                int dstNode = Integer.parseInt(edge.getNode2().getId());
+                int sourceNode = _offsetID.get(Integer.parseInt(edge.getNode1().getId()));
+                int dstNode = _offsetID.get(Integer.parseInt(edge.getNode2().getId()));
                 if ((_allTasks.keySet().contains(sourceNode))
                         && (_allTasks.keySet().contains(dstNode))) {
                     Task parent = _allTasks.get(sourceNode);
                     Task child = _allTasks.get(dstNode);
                     // Inserting the parent to child dependency.
                     int weight = Integer.parseInt(edge.getAttribute("Weight").toString());
-                    parent.addChild(child, weight);
-                    child.addParent(parent);
+                    parent.addChild(dstNode);
+                    child.addParent(sourceNode, weight);
                 } else {
                     throw new InputException("Input graph could not be parsed correctly");
                 }

@@ -46,25 +46,25 @@ public class BNBTask implements Serializable{
         _id = task.getTaskID();
         _procTime = task.getProcessTime();
 
-        Set<Task> parents = task.getParentTasks();
-        Set<Task> children = task.getChildTasks();
-        int highestParentId = 0;
+        Set<Integer> parents = task.getParentTasks();
+        Set<Integer> children = task.getChildTasks();
+        int highestParentId = -1;
         _parents = new int[parents.size()];
         _children = new int[children.size()];
 
         int i = 0;
-        for (Task parent : parents) {
-            _parents[i] = parent.getTaskID();
-            if (_parents[i] > highestParentId) {
-                highestParentId = _parents[i];
+        for (Integer parentID : parents) {
+            if (parentID > highestParentId) {
+                highestParentId = parentID;
             }
+            _parents[i] = parentID;
             i++;
             _numDependency++;
         }
 
         i = 0;
-        for (Task child : children) {
-            _children[i] = child.getTaskID();
+        for (Integer child : children) {
+            _children[i] = child;
             i++;
         }
 

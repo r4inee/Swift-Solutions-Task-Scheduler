@@ -9,12 +9,10 @@ import java.util.*;
 public class Task implements Serializable{
     private int _taskID;
     private int _processTime;
-    private int _numDependency;
-    private Map<Integer, Integer> _communicationCosts; // Refers to map communication cost with its parents.
+    private Map<Integer, Integer> _communicationCosts;
+    private Set<Integer> _parentTasks;
+    private Set<Integer> _childTasks; // Refers to map communication cost with its children
     private int _bottomLevel;
-
-    private Set<Task> _childTasks; // Contains all the tasks which has a dependency on the this instance.
-    private Set<Task> _parentTasks;
 
     /**
      * Constructor which takes an unique ID identifying this task and the processing time of the task as input.
@@ -24,15 +22,13 @@ public class Task implements Serializable{
         _taskID = taskID;
         _processTime = processTime;
         _communicationCosts = new HashMap<>();
-        _parentTasks = new LinkedHashSet<>();
+        _parentTasks = new HashSet<>();
         _childTasks = new HashSet<>();
     }
 
     public Task createCopy() {
         Task task = new Task(_taskID, _processTime);
-        _numDependency = task._numDependency;
         _communicationCosts = task._communicationCosts;
-        _childTasks = task._childTasks;
         _parentTasks = task._parentTasks;
         return task;
     }
@@ -41,45 +37,26 @@ public class Task implements Serializable{
      * Method to add a child task to the task
      * @param task The child task to be added
      */
-    public void addChild(Task task, int communicationCost){
-        this._childTasks.add(task);
-        task.addDependency(this.getTaskID(), communicationCost);
-    }
-
-    public void addParent(Task task) {
-        this._parentTasks.add(task);
-    }
-
-    /**
-     * Method to schedule this task and reduce (relax) dependencies on its children
-     */
-    public void scheduleTask() {
-        for (Task task : this._childTasks) {
-            task.removeDependency();
-        }
+    public void addChild(Integer task){
+        _childTasks.add(task);
     }
 
     /**
      * Method for initialising dependency with a communication cost in the child instance.
      */
-    private void addDependency(int childID, int communicationCost) {
-        this._communicationCosts.put(childID, communicationCost);
-    }
-    /**
-     * Method for decrementing dependency count in the child instance after parent has been scheduled.
-     */
-    private void removeDependency() {
-        _numDependency--;
+    public void addParent(Integer task, int communicationCost) {
+        _communicationCosts.put(task, communicationCost);
+        _parentTasks.add(task);
     }
 
     /**
-     * Getter for obtaining the communication cost with its child.
-     * @param task child task
+     * Getter for obtaining the communication cost with its parent.
+     * @param parentID
      * @return The cost of communication, defaults to 0.
      */
-    public int getCommunicationCosts(Integer childID) {
-        if (_communicationCosts.keySet().contains(childID)) {
-            return _communicationCosts.get(childID);
+    public int getCommunicationCosts(Integer parentID) {
+        if (_communicationCosts.keySet().contains(parentID)) {
+            return _communicationCosts.get(parentID);
         }
         return 0;
     }
@@ -101,18 +78,18 @@ public class Task implements Serializable{
     }
 
     /**
-     * Getter for getting the  number of dependencies.
+     * Getter for getting the number of dependencies.
      * @return
      */
     public int getNumDependency(){
-        return this._numDependency;
+        return _parentTasks.size();
     }
 
-    public Set<Task> getParentTasks() {
+    public Set<Integer> getParentTasks() {
         return _parentTasks;
     }
 
-    public Set<Task> getChildTasks() { return _childTasks; }
+    public Set<Integer> getChildTasks() { return _childTasks; }
 
     public Map<Integer, Integer> getCommunicationCosts() { return _communicationCosts; }
 
@@ -129,7 +106,6 @@ public class Task implements Serializable{
     public int getBottomLevel() {
         return _bottomLevel;
     }
-
 
     @Override
     public boolean equals(Object obj) {
