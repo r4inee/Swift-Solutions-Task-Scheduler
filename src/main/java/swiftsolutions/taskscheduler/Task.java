@@ -1,7 +1,5 @@
 package swiftsolutions.taskscheduler;
 
-import swiftsolutions.util.Pair;
-
 import java.io.Serializable;
 import java.util.*;
 
@@ -12,7 +10,7 @@ public class Task implements Serializable{
     private int _taskID;
     private int _processTime;
     private int _numDependency;
-    private Map<Task, Integer> _communicationCosts; // Refers to map communication cost with its parents.
+    private Map<Integer, Integer> _communicationCosts; // Refers to map communication cost with its parents.
     private int _bottomLevel;
 
     private Set<Task> _childTasks; // Contains all the tasks which has a dependency on the this instance.
@@ -26,7 +24,7 @@ public class Task implements Serializable{
         _taskID = taskID;
         _processTime = processTime;
         _communicationCosts = new HashMap<>();
-        _parentTasks = new HashSet<>();
+        _parentTasks = new LinkedHashSet<>();
         _childTasks = new HashSet<>();
     }
 
@@ -45,7 +43,7 @@ public class Task implements Serializable{
      */
     public void addChild(Task task, int communicationCost){
         this._childTasks.add(task);
-        task.addDependency(this, communicationCost);
+        task.addDependency(this.getTaskID(), communicationCost);
     }
 
     public void addParent(Task task) {
@@ -62,11 +60,10 @@ public class Task implements Serializable{
     }
 
     /**
-     * Method for initialising dependency with a communication cost in the parent instance.
+     * Method for initialising dependency with a communication cost in the child instance.
      */
-    private void addDependency(Task task, int communicationCost) {
-        this._communicationCosts.put(task, communicationCost);
-        _numDependency++;
+    private void addDependency(int childID, int communicationCost) {
+        this._communicationCosts.put(childID, communicationCost);
     }
     /**
      * Method for decrementing dependency count in the child instance after parent has been scheduled.
@@ -76,13 +73,13 @@ public class Task implements Serializable{
     }
 
     /**
-     * Getter for obtaining the communication cost with its parent.
-     * @param task The parent of the task.
+     * Getter for obtaining the communication cost with its child.
+     * @param task child task
      * @return The cost of communication, defaults to 0.
      */
-    public int getCommunicationCosts(Task task) {
-        if (_communicationCosts.keySet().contains(task)) {
-            return _communicationCosts.get(task);
+    public int getCommunicationCosts(Integer childID) {
+        if (_communicationCosts.keySet().contains(childID)) {
+            return _communicationCosts.get(childID);
         }
         return 0;
     }
@@ -117,7 +114,7 @@ public class Task implements Serializable{
 
     public Set<Task> getChildTasks() { return _childTasks; }
 
-    public Map<Task, Integer> getCommunicationCosts() { return _communicationCosts; }
+    public Map<Integer, Integer> getCommunicationCosts() { return _communicationCosts; }
 
     public void offsetId(int offset) {
         _taskID -= offset;

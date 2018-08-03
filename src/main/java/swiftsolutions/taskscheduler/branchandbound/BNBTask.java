@@ -70,8 +70,8 @@ public class BNBTask implements Serializable{
 
         if (highestParentId >= 0) {
             _commCost = new int[highestParentId + 1];
-            Map<Task, Integer> commCosts = task.getCommunicationCosts();
-            commCosts.forEach((Task parent, Integer cost) -> _commCost[parent.getTaskID()] = cost);
+            Map<Integer, Integer> commCosts = task.getCommunicationCosts();
+            commCosts.forEach((Integer parent, Integer cost) -> _commCost[parent] = cost);
         }
     }
 
