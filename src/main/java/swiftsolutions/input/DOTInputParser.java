@@ -56,7 +56,7 @@ public class DOTInputParser implements InputParser {
                 int id = Integer.parseInt(nodeName);
                 int weight = Integer.parseInt(_inputNodes.get(nodeName).getAttribute("Weight").toString());
                 // Creating a new Task object and appending to the map with id as the key.
-                task = new Task(id, weight);
+                task = new Task(nodeID, weight);
                 _allTasks.put(nodeID, task);
                 _offsetID.put(id, nodeID);
                 nodeID++;

@@ -1,7 +1,8 @@
 package swiftsolutions.interfaces.taskscheduler;
 
 /**
- * Created by Winston on 8/1/2018.
+ * Represents an algorithm that meant to run in parallel
+ * See Algorithm
  */
 public interface ParallelAlgorithm extends Algorithm {
     public void setCores(int cores);

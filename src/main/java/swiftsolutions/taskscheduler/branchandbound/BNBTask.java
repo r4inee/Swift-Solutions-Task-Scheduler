@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by Winston on 8/2/2018.
+ * Class that represents a task optimized for BNB
  */
 public class BNBTask implements Serializable{
     int[] _parents;
@@ -20,6 +20,9 @@ public class BNBTask implements Serializable{
     int _numDependency;
     int _bottomLevel;
 
+    /**
+     * Constructor used for cloning
+     */
     public BNBTask(int id, int[] parents, int[] children, int procTime, int[] commCost, int numDependency, int bottomLevel) {
         _parents = parents;
         _children = children;
@@ -30,6 +33,9 @@ public class BNBTask implements Serializable{
         _bottomLevel = bottomLevel;
     }
 
+    /**
+     * Used to produce a clone of the current task
+     */
     public BNBTask copy() {
         return new BNBTask(
                 _id,
@@ -42,16 +48,22 @@ public class BNBTask implements Serializable{
         );
     }
 
+    /**
+     * Make a BNBTask from a Task
+     */
     public BNBTask(Task task, int id) {
         _id = id;
         _procTime = task.getProcessTime();
 
         Set<Integer> parents = task.getParentTasks();
         Set<Integer> children = task.getChildTasks();
+
         int highestParentId = -1;
+
         _parents = new int[parents.size()];
         _children = new int[children.size()];
 
+        // We want to keep track of the highest parent id and to increase dependencies when adding parents
         int i = 0;
         for (Integer parentID : parents) {
             if (parentID > highestParentId) {
@@ -62,12 +74,14 @@ public class BNBTask implements Serializable{
             _numDependency++;
         }
 
+        // Add children
         i = 0;
         for (Integer child : children) {
             _children[i] = child;
             i++;
         }
 
+        // Initialize communication costs
         if (highestParentId >= 0) {
             _commCost = new int[highestParentId + 1];
             Map<Integer, Integer> commCosts = task.getCommunicationCosts();
