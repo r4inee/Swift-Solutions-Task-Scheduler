@@ -25,9 +25,9 @@ public class GraphRunnerBenchmark {
 	@Before
 	public void generateBenchmark() throws Exception {
 		
-		_benchmarkParser = new BenchmarkParser("src/test/resources/test_graphs");
-		//_benchmarkParser.catagoriseFiles();
-		_runner = new BenchmarkAppRunner(16,16);
+		_benchmarkParser = new BenchmarkParser("src/test/resources/test_graphs_full_name");
+		_benchmarkParser.catagoriseFiles();
+		_runner = new BenchmarkAppRunner(2,2);
 
 		
 	}
