@@ -1,52 +1,85 @@
 package swiftsolutions.taskscheduler.branchandbound;
 
-import swiftsolutions.taskscheduler.Schedule;
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 
+/**
+ * Class that represents a schedule optimized for branch and bound.
+ */
 public class BNBSchedule implements Serializable{
+
+    public static final int START_TIME = 0;
+    public static final int END_TIME = 1;
+    public static final int PROCCESSOR_INDEX = 2;
+    public static final int EMPTY = -1;
 
     int _numTasks;
     int[][] _schedule;
     int[] _procEndTimes;
 
+    /**
+     * Normal constructor
+     * @param numTasks number of tasks to be scheduled
+     * @param numProc number of processors to schedule on
+     */
     public BNBSchedule(int numTasks, int numProc) {
         _numTasks = numTasks;
-        // nodeId[start, end, proc]
         _schedule = new int[_numTasks][3];
+
+        // Initialize empty schedule
         for (int i = 0; i < _schedule.length; i++) {
             for (int j = 0; j < _schedule[0].length; j++) {
-                _schedule[i][j] = _schedule[i][j] = -1;
+                _schedule[i][j] = _schedule[i][j] = EMPTY;
             }
         }
+
         _procEndTimes = new int[numProc];
     }
 
+    /**
+     * Constructor used for cloning
+     */
     public BNBSchedule(int numTasks, int[][] schedule, int[] procEndTimes) {
         _numTasks = numTasks;
         _schedule = schedule;
         _procEndTimes = procEndTimes;
     }
 
+    /**
+     * Create a clone of the schedule
+     * @return
+     */
     public BNBSchedule copy() {
+        // Make a deep copy of the schedule
         int[][] scheduleCopy = new int[_schedule.length][_schedule[0].length];
         for (int i = 0; i < _schedule.length; i++) {
             for (int j = 0; j < _schedule[0].length; j++) {
                 scheduleCopy[i][j] = _schedule[i][j];
             }
         }
+
         return new BNBSchedule(_numTasks, scheduleCopy, Arrays.copyOf(_procEndTimes, _procEndTimes.length));
     }
 
+    /**
+     * Add a task to the schedule
+     * @param task task to be added
+     * @param proc processor for task to be scheduled on
+     */
     public void addTask(BNBTask task, int proc) {
+        // Initialize offset to 0
         int offset = 0;
+
+        // Get earliest time that the task can be scheduled
         for (int parent : task._parents) {
-            int tmpOffset = _schedule[parent][1];
-            if (proc != _schedule[parent][2]) {
+            // Task must be scheduled after parent
+            int tmpOffset = _schedule[parent][END_TIME];
+            // If on a different processor, task must be ahead by
+            // the communication cost
+            if (proc != _schedule[parent][PROCCESSOR_INDEX]) {
                 tmpOffset += task._commCost[parent];
             }
             if (tmpOffset > offset) {
@@ -54,20 +87,29 @@ public class BNBSchedule implements Serializable{
             }
         }
 
+        // If task is on a different processor, then we take offset
+        // Else we can just use the processor end time.
         int taskStart;
         if (offset < _procEndTimes[proc]) {
             taskStart = _procEndTimes[proc];
         } else {
             taskStart = offset;
         }
+
+        // Update schedule and endProcTime to reflect the addition
         _procEndTimes[proc] = taskStart + task._procTime;
-        _schedule[task._id][0] = taskStart;
-        _schedule[task._id][1] = _procEndTimes[proc];
-        _schedule[task._id][2] = proc;
+        _schedule[task._id][START_TIME] = taskStart;
+        _schedule[task._id][END_TIME] = _procEndTimes[proc];
+        _schedule[task._id][PROCCESSOR_INDEX] = proc;
     }
 
 
+    /**
+     * Get the time that the schedule takes
+     * @return time that the schedule takes
+     */
     public int getCost() {
+        // Get the maximum time at which a processor ends
         int max = 0;
         for (int procCost : _procEndTimes) {
             if (procCost > max) {
@@ -77,27 +119,23 @@ public class BNBSchedule implements Serializable{
         return max;
     }
 
-    public int getIdleTime() {
-        int[] procEndTimes = Arrays.copyOf(_procEndTimes, _procEndTimes.length);
-        for (int[] task : _schedule) {
-            if (task[0] != -1) {
-                procEndTimes[task[2]] -= task[1] - task[0];
-            }
-        }
-        int count = 0;
-        for (int time : procEndTimes) {
-            count += time;
-        }
-        return count;
-    }
-
+    /**
+     * Hashcode for pruning
+     * @return hashcode that is equivalent to other "equivalent schedules"
+     */
     @Override
     public int hashCode() {
+
+        // Initialize some stacks representing a processor and a set representing the schedule
         Set<Stack<Integer>> schedule = new HashSet<>();
         Stack<Integer>[] stacks = new Stack[_procEndTimes.length];
+
+        // Initialize the stacks
         for (int i = 0; i < stacks.length; i++) {
             stacks[i] = new Stack<>();
         }
+
+        // Add each processors tasks and start times to a stack
         for (int i = 0; i < _schedule.length; i++) {
             if (_schedule[i][0] != -1) {
                 stacks[_schedule[i][2]].add(i);
@@ -105,12 +143,17 @@ public class BNBSchedule implements Serializable{
             }
         }
 
+        // Add the stacks to a set.
         for(Stack<Integer> stack : stacks) {
             schedule.add(stack);
         }
+
         return schedule.hashCode();
     }
 
+    /**
+     * Used for pruning in hashset comparison, "equivalent schedules" should be equal
+     */
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {

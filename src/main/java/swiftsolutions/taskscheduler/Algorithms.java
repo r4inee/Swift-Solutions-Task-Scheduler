@@ -4,7 +4,7 @@ import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithm;
 
 /**
- * Created by Winston on 8/1/2018.
+ * Enum of algorithms that we may want to use for scheduling
  */
 public enum Algorithms {
     BRANCH_AND_BOUND(new BNBAlgorithm(), "bnb-simple", false);
@@ -13,6 +13,11 @@ public enum Algorithms {
     private String _flag;
     private boolean _parallel;
 
+    /**
+     * @param algorithm Algorithm instance
+     * @param flag Flag used to indicate algorithm
+     * @param parallel Whether the algorithm is parallel or not
+     */
     Algorithms(Algorithm algorithm, String flag, boolean parallel) {
         _algorithm = algorithm;
         _flag = flag;
