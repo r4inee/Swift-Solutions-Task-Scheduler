@@ -29,6 +29,13 @@ public class BenchmarkParser {
 
 	public void catagoriseFiles() {
 
+<<<<<<< HEAD
+=======
+		
+
+
+
+>>>>>>> d331c0b... Made benchmark runner which runs files multiple graphs at a time, + tests
 		for(File file : _graphs) {
 
 			//String[0]: processors
@@ -100,6 +107,12 @@ public class BenchmarkParser {
 
 		return _nodesCatagory;
 
+	}
+	
+	public ArrayList<File> getAllGraphs(){
+				
+		return new ArrayList<File>(Arrays.asList(_graphs));
+		
 	}
 
 	//get all files in the entire folder
