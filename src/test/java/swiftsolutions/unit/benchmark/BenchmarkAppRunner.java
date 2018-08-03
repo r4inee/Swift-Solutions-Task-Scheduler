@@ -74,12 +74,16 @@ public class BenchmarkAppRunner {
 			Schedule outputSchedule = algorithm.execute(tasks);
 			long end = System.currentTimeMillis();
 			_outputs.put(runnable.getName(), end - start);
+				
+				System.out.println("graph:" + runnable.getName() + " ran in" + (end - start));
 			
 			}catch(Exception e) {
 				
-				System.out.println("graph:" + runnable.getName() + "failed");
+				System.out.println("!!done!!");
 				
 			}
+			
+			
 		}
 	}
 
