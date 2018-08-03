@@ -15,8 +15,8 @@ public class BNBAlgorithm implements Algorithm {
     private Cloner _cloner;
     private BNBSchedule _optimalSchedule;
     private int _bound;
-    private int[] _blMap;
     private Set<BNBSchedule> _seenSchedules;
+    private Map<Integer, Task> _taskMap;
 
     public BNBAlgorithm() {
         _cloner = new Cloner();
@@ -29,17 +29,18 @@ public class BNBAlgorithm implements Algorithm {
     }
 
     @Override
-    public Schedule execute(Set<Task> tasks) {
-        _blMap = new int[tasks.size()];
-        Set<Task> leafs = tasks.stream().filter((Task task) -> task.getChildTasks().size() == 0).collect(Collectors.toSet());
+    public Schedule execute(Map<Integer, Task> tasks) {
+        _taskMap = tasks;
+        Set<Task> leafs = tasks.values()
+                .stream()
+                .filter((Task task) -> task.getChildTasks().size() == 0)
+                .collect(Collectors.toSet());
+
         for (Task leaf: leafs) {
             leaf.updateBottomLevel(leaf.getProcessTime());
             getBottomLevels(leaf.getParentTasks(), leaf.getProcessTime());
         }
-        Set<BNBTask> convertedTasks = convertTasks(tasks);
-        for (BNBTask task : convertedTasks) {
-            _blMap[task._id] = task._bottomLevel;
-        }
+        Set<BNBTask> convertedTasks = convertTasks();
 
 
         for (BNBTask task : convertedTasks) {
@@ -63,25 +64,23 @@ public class BNBAlgorithm implements Algorithm {
         return new Schedule(taskMaps, arraySchedule.length);
     }
 
-    public Set<BNBTask> convertTasks(Set<Task> origTasks) {
+    public Set<BNBTask> convertTasks() {
         Set<BNBTask> tasks = new HashSet<>();
-        int min =origTasks.stream().mapToInt((Task task) -> task.getTaskID()).min().getAsInt();
-        origTasks.forEach((Task task) -> task.offsetId(min));
-        for (Task task : origTasks) {
+        for (Task task : _taskMap.values()) {
             tasks.add(new BNBTask(task));
         }
         return tasks;
     }
 
-    private void getBottomLevels(Set<Task> nodes, int currBottomLevel) {
-        for (Task node: nodes) {
-            node.updateBottomLevel(currBottomLevel + node.getProcessTime());
-            if (node.getParentTasks().size() != 0) {
-                getBottomLevels(node.getParentTasks(), currBottomLevel + node.getProcessTime());
+    private void getBottomLevels(Set<Integer> nodes, int currBottomLevel) {
+        for (Integer node: nodes) {
+            _taskMap.get(node).updateBottomLevel(currBottomLevel + _taskMap.get(node).getProcessTime());
+            if (_taskMap.get(node).getParentTasks().size() != 0) {
+                getBottomLevels(_taskMap.get(node).getParentTasks(),
+                        currBottomLevel + _taskMap.get(node).getProcessTime());
             }
         }
     }
-
 
     private Set<BNBTask> getAvailableTasks(Set<BNBTask> tasks) {
         Set<BNBTask> availableTasks = new HashSet<>();
@@ -149,8 +148,8 @@ public class BNBAlgorithm implements Algorithm {
         long lowerBound = 0;
         for (int i = 0; i < schedule._schedule.length; i++) {
             if (schedule._schedule[i][0] != -1) {
-                if (schedule._schedule[i][0] + _blMap[i] > lowerBound) {
-                    lowerBound = schedule._schedule[i][0] + _blMap[i];
+                if (schedule._schedule[i][0] + _taskMap.get(i).getBottomLevel() > lowerBound) {
+                    lowerBound = schedule._schedule[i][0] + _taskMap.get(i).getBottomLevel();
                 }
             }
         }

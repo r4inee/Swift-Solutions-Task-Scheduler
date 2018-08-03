@@ -17,7 +17,7 @@ import swiftsolutions.output.OutputType;
 import swiftsolutions.cli.CLIArgumentParser;
 import swiftsolutions.taskscheduler.*;
 
-import java.util.Set;
+import java.util.Map;
 
 /**
  * Created by Winston on 7/31/2018.
@@ -65,7 +65,7 @@ public class Context {
             return;
         }
 
-        Set<Task> tasks;
+        Map<Integer, Task> tasks;
         try {
             tasks = _inputParser.parse(_argumentParser.getFile());
             _outputManager.send(new OutputMessage(OutputType.DEBUG,

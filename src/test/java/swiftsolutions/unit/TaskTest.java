@@ -5,7 +5,7 @@ import swiftsolutions.exceptions.InputException;
 import swiftsolutions.input.DOTInputParser;
 import swiftsolutions.taskscheduler.Task;
 
-import java.util.Set;
+import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -16,17 +16,17 @@ public class TaskTest {
     @Test
     public void testInit() {
         DOTInputParser parser = new DOTInputParser();
-        Set<Task> allTasks = null;
+        Map<Integer, Task> taskMap = null;
         try {
-            allTasks = parser.parse("src/test/resources/test_graphs/Nodes_7_OutTree.dot");
+            taskMap = parser.parse("src/test/resources/test_graphs/Nodes_7_OutTree.dot");
         } catch (InputException e) {
             e.printStackTrace();
             fail();
         }
 
-        Task task0 = null;
-        for (Task task : allTasks) {
-            switch (task.getTaskID()) {
+        Integer task0 = null;
+        for (Integer task : taskMap.keySet()) {
+            switch (task) {
                 case 0:
                     task0 = task;
                 default:
@@ -35,16 +35,16 @@ public class TaskTest {
         }
 
         assertNotNull(task0);
-        assertEquals(0, task0.getTaskID());
-        assertEquals(5, task0.getProcessTime());
+        assertEquals(0, taskMap.get(task0).getTaskID());
+        assertEquals(5, taskMap.get(task0).getProcessTime());
     }
 
     @Test
     public void testAddChildrenAndCost() {
         DOTInputParser parser = new DOTInputParser();
-        Set<Task> allTasks = null;
+        Map<Integer, Task>  taskMap = null;
         try {
-            allTasks = parser.parse("src/test/resources/test_graphs/Nodes_7_OutTree.dot");
+            taskMap = parser.parse("src/test/resources/test_graphs/Nodes_7_OutTree.dot");
         } catch (InputException e) {
             e.printStackTrace();
             fail();
@@ -53,13 +53,13 @@ public class TaskTest {
         Task task5 = null;
         Task task6 = null;
 
-        for (Task task : allTasks) {
-            switch (task.getTaskID()) {
+        for (Integer task : taskMap.keySet()) {
+            switch (task) {
                 case 5:
-                    task5 = task;
+                    task5 = taskMap.get(task);
                     break;
                 case 6:
-                    task6 = task;
+                    task6 = taskMap.get(task);
                     break;
                 default:
                     break;
@@ -67,9 +67,10 @@ public class TaskTest {
         }
         assertNotNull(task5);
         assertNotNull(task6);
-        assertEquals(0, task6.getCommunicationCosts(task5.getTaskID()));
-        task5.addChild(task6, 1);
-//        assertEquals(2, task6.getNumDependency());
-//        assertEquals(1, task6.getCommunicationCosts(task5.getTaskID()));
+        assertEquals(0, task5.getCommunicationCosts(6));
+        task5.addChild(6);
+        task6.addParent(5, 1);
+        assertEquals(2, task6.getNumDependency());
+        assertEquals(1, task6.getCommunicationCosts(5));
     }
 }
