@@ -66,8 +66,8 @@ public class BNBAlgorithm implements Algorithm {
 
     public Set<BNBTask> convertTasks() {
         Set<BNBTask> tasks = new HashSet<>();
-        for (Task task : _taskMap.values()) {
-            tasks.add(new BNBTask(task));
+        for (Integer id : _taskMap.keySet()) {
+            tasks.add(new BNBTask(_taskMap.get(id), id));
         }
         return tasks;
     }
