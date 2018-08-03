@@ -37,6 +37,7 @@ public class Schedule {
 			procMap.get(procID).add(taskID);
 		}
 		return procMap;
+
 	}
 
 	public String getOutputString() {
