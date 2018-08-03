@@ -42,8 +42,8 @@ public class BNBTask implements Serializable{
         );
     }
 
-    public BNBTask(Task task) {
-        _id = task.getTaskID();
+    public BNBTask(Task task, int id) {
+        _id = id;
         _procTime = task.getProcessTime();
 
         Set<Integer> parents = task.getParentTasks();
