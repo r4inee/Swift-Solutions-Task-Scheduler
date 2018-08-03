@@ -2,13 +2,14 @@ package swiftsolutions.unit.benchmark;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 public class BenchmarkParser {
 
 	private String _folder;
-	private File[] graphs;
+	private File[] _graphs;
 	private Map<String, ArrayList<File>> _processorCatagory = new HashMap<String, ArrayList<File>>();
 	private Map<String, ArrayList<File>> _typeCatagory = new HashMap<String,  ArrayList<File>>();
 	private Map<String, ArrayList<File>> _nodesCatagory = new HashMap<String,  ArrayList<File>>();
@@ -17,17 +18,17 @@ public class BenchmarkParser {
 	public BenchmarkParser(String folder) {
 
 		_folder = folder;
+		_graphs = new File(_folder).listFiles();
 
 	}
 
 	public void catagoriseFiles() {
 
-		File folder = new File(_folder);
-		graphs = folder.listFiles();
+		
 
 
 
-		for(File file : graphs) {
+		for(File file : _graphs) {
 
 			//String[0]: processors
 			//String[1]: type
@@ -91,6 +92,12 @@ public class BenchmarkParser {
 
 		return _nodesCatagory;
 
+	}
+	
+	public ArrayList<File> getAllGraphs(){
+				
+		return new ArrayList<File>(Arrays.asList(_graphs));
+		
 	}
 
 
