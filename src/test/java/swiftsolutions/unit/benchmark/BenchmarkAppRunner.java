@@ -22,15 +22,17 @@ import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithm;
 
 public class BenchmarkAppRunner {
 
-
 	private ArrayList<File> _graphs;
 	private DOTInputParser _inputParser;
 	private static Map<String, Long> _outputs;
-	int _timeout = 5;
+	private ArrayList<String> _timedOutGraphs;
+	int _timeout;
 	int _numCores;
 
 	public BenchmarkAppRunner(int numCores) {
-
+		
+		_timedOutGraphs = new ArrayList<String>();
+		_timeout = 5;
 		_inputParser = new DOTInputParser();
 		_numCores = numCores;
 		_outputs =  new HashMap<String, Long>();
@@ -45,12 +47,14 @@ public class BenchmarkAppRunner {
 	}
 	public void addList(ArrayList<File> files) {
 
-		System.out.println(files + " were added");
 		_graphs.addAll(files);
 
 	}
 
 	public void runAll() {
+
+		List<Future<Schedule>> future;
+		ExecutorService executor;
 
 		for(File runnable : _graphs) {
 
@@ -66,14 +70,24 @@ public class BenchmarkAppRunner {
 				} catch (InputException e) {
 					e.printStackTrace();
 				}
-
-				ExecutorService executor = Executors.newSingleThreadExecutor();
-				List<Future<String>> future = executor.invokeAll(Arrays.asList(new Runner(runnable, tasks, getProcs(runnable))), _timeout, TimeUnit.SECONDS); 
-				executor.shutdown();
+				executor = Executors.newSingleThreadExecutor();
+				long start = System.currentTimeMillis();
+				future = executor.invokeAll(Arrays.asList(new Runner(runnable, tasks, getProcs(runnable))), _timeout, TimeUnit.SECONDS);
+				long end = System.currentTimeMillis();
+				_outputs.put(runnable.getName(), end - start);
+				
+				if(!future.get(0).isDone()) {
+					System.out.println(future.get(0).get().getOutputString());
+				}
+				
+				System.out.println("graph:" + runnable.getName() + " ran in: " + (end - start) + "ms"  );
+				
+				executor.shutdownNow();
 				if(future.get(0).isCancelled()) {
+					_timedOutGraphs.add(runnable.getName());
 					System.out.println(runnable.getName() + " took more than " + _timeout + " seconds to run ");
 				}
-
+				
 			}catch(Exception e) {
 				e.printStackTrace();
 				System.out.println("Graph run failed");
@@ -87,6 +101,12 @@ public class BenchmarkAppRunner {
 	public Map<String, Long> getOutputs() {
 
 		return _outputs;
+
+	}
+	
+	public ArrayList<String> getTimedOutGraphs(){
+		
+		return _timedOutGraphs;
 
 	}
 
@@ -105,7 +125,7 @@ public class BenchmarkAppRunner {
 
 	}
 
-	static class Runner implements Callable<String>
+	static class Runner implements Callable<Schedule>
 	{
 		Map<Integer, Task> _tasks;
 		int _processors;
@@ -118,20 +138,13 @@ public class BenchmarkAppRunner {
 			_tasks = tasks;
 		}
 
-		public String call() {
+		public Schedule call() {
 
-			long start = System.currentTimeMillis();
+			
 			Algorithm algorithm = new BNBAlgorithm();
 			algorithm.setProcessors(_processors);
-			System.out.println(_tasks.toString());
 			Schedule outputSchedule = algorithm.execute(_tasks);
-			long end = System.currentTimeMillis();
-
-			_outputs.put(_runnable.getName(), end - start);
-			System.out.println(outputSchedule.getOutputString());
-
-			System.out.println("graph:" + _runnable.getName() + " ran in: " + (end - start) + "ms"  );
-			return "";
+			return outputSchedule;
 		}
 	}
 
