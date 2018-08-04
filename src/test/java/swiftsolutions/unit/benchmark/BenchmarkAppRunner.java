@@ -18,6 +18,7 @@ import swiftsolutions.taskscheduler.Algorithms;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.SchedulingAlgorithmFactory;
 import swiftsolutions.taskscheduler.Task;
+import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithm;
 
 public class BenchmarkAppRunner {
 
@@ -27,18 +28,16 @@ public class BenchmarkAppRunner {
 	private SchedulingAlgorithmFactory _algorithmFactory;
 	private Map<String, Long> _outputs;
 
-	int _numProcessors;
 	int _numCores;
 
-	public BenchmarkAppRunner(int numProcessors, int numCores) {
+	public BenchmarkAppRunner(int numCores) {
 
 		_algorithmFactory = new SchedulingAlgorithmFactory();
 		_inputParser = new DOTInputParser();
-		_numProcessors = numProcessors;
 		_numCores = numCores;
 		_outputs =  new HashMap<String, Long>();
 		_graphs = new ArrayList<File>();
-		
+
 	}
 
 	public void addSingle(File file) {
@@ -47,7 +46,7 @@ public class BenchmarkAppRunner {
 
 	}
 	public void addList(ArrayList<File> files) {
-		
+
 		System.out.println(files + " were added");
 		_graphs.addAll(files);
 
@@ -57,39 +56,56 @@ public class BenchmarkAppRunner {
 
 		for(File runnable : _graphs) {
 
-			
+
 			System.out.println("Attempting to run graph: " + runnable.getName());
 
 			try {
-			
-			Set<Task> tasks = null;
-			_inputParser = new DOTInputParser();
-			try {
-				tasks = _inputParser.parse(runnable.toString());
-			} catch (InputException e) {
-				e.printStackTrace();
-			}
-			long start = System.currentTimeMillis();
-			Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND, _numProcessors, _numCores);
-			Schedule outputSchedule = algorithm.execute(tasks);
-			long end = System.currentTimeMillis();
-			_outputs.put(runnable.getName(), end - start);
-				
-				System.out.println("graph:" + runnable.getName() + " ran in" + (end - start));
-			
+
+				Map<Integer, Task> tasks = null;
+				_inputParser = new DOTInputParser();
+				try {
+					tasks = _inputParser.parse(runnable.toString());
+				} catch (InputException e) {
+					e.printStackTrace();
+				}
+				long start = System.currentTimeMillis();
+				Algorithm algorithm = new BNBAlgorithm();
+				algorithm.setProcessors(getProcs(runnable));
+				Schedule outputSchedule = algorithm.execute(tasks);
+				long end = System.currentTimeMillis();
+				_outputs.put(runnable.getName(), end - start);
+				System.out.println(outputSchedule.getOutputString());
+
+				System.out.println("graph:" + runnable.getName() + " ran in: " + (end - start)  );
+
 			}catch(Exception e) {
-				
+				e.printStackTrace();
 				System.out.println("Graph run failed");
-				
+
 			}
 		}
-		
+
 		System.out.println("!!done!!");
 	}
 
 	public Map<String, Long> getOutputs() {
 
 		return _outputs;
+
+	}
+
+	public int getProcs(File graph) {
+
+		String split = graph.getName().split("_")[0].replaceAll("p", "");
+		int processors = 4;
+		try {
+			
+			processors = Integer.parseInt(split);
+			
+		}catch(Exception e) {
+		}
+
+		return processors;
 
 	}
 
