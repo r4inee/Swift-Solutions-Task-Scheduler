@@ -21,7 +21,9 @@ public class DOTOutputWriter implements OutputWriter {
     public void serialize(String filename, Schedule schedule, Map<Integer, Task> taskMap) throws OutputException {
         _taskMap = taskMap;
         String outputFile = new File(filename).getName();
+
         String outputFileName = new File(filename).getName();
+
         if (outputFile.length() > 1) {
             outputFile = outputFile.substring(0, 1).toUpperCase() + outputFile.substring(1);
         } else {
@@ -35,6 +37,7 @@ public class DOTOutputWriter implements OutputWriter {
 
         try {
             _writer = new BufferedWriter(new FileWriter(outputFileName + "-output.dot"));
+
             _writer.write("digraph \"output" + outputFile + "\" {\n");
 
             for (Integer task : taskMap.keySet()) {
