@@ -24,10 +24,6 @@ public class BenchmarkParser {
 
 	public void catagoriseFiles() {
 
-
-
-
-
 		for(File file : _graphs) {
 
 			//String[0]: processors
