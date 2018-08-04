@@ -179,6 +179,11 @@ public class CLIOptionTest {
         }
     }
 
+    /**
+     * Test that for a invalid argument passed to verify()
+     * for the Visualize throws an ArgumentFormatException
+     * with the correct message
+     */
     @Test
     public void testVisualizeInvalidVerify(){
         VisualizeOption visualizeOption = new VisualizeOption();
