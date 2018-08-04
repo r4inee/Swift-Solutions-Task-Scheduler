@@ -4,19 +4,11 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-import swiftsolutions.cli.CLIArgumentParser;
 import swiftsolutions.exceptions.InputException;
 import swiftsolutions.input.DOTInputParser;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
-import swiftsolutions.output.AppOutputManager;
-import swiftsolutions.output.DOTOutputWriter;
-import swiftsolutions.output.OutputMessage;
-import swiftsolutions.output.OutputType;
-import swiftsolutions.taskscheduler.Algorithms;
 import swiftsolutions.taskscheduler.Schedule;
-import swiftsolutions.taskscheduler.SchedulingAlgorithmFactory;
 import swiftsolutions.taskscheduler.Task;
 import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithm;
 
@@ -25,14 +17,12 @@ public class BenchmarkAppRunner {
 
 	private ArrayList<File> _graphs;
 	private DOTInputParser _inputParser;
-	private SchedulingAlgorithmFactory _algorithmFactory;
 	private Map<String, Long> _outputs;
 
 	int _numCores;
 
 	public BenchmarkAppRunner(int numCores) {
 
-		_algorithmFactory = new SchedulingAlgorithmFactory();
 		_inputParser = new DOTInputParser();
 		_numCores = numCores;
 		_outputs =  new HashMap<String, Long>();
@@ -68,11 +58,14 @@ public class BenchmarkAppRunner {
 				} catch (InputException e) {
 					e.printStackTrace();
 				}
+				
 				long start = System.currentTimeMillis();
 				Algorithm algorithm = new BNBAlgorithm();
 				algorithm.setProcessors(getProcs(runnable));
 				Schedule outputSchedule = algorithm.execute(tasks);
 				long end = System.currentTimeMillis();
+				
+				
 				_outputs.put(runnable.getName(), end - start);
 				System.out.println(outputSchedule.getOutputString());
 
