@@ -22,8 +22,8 @@ import static junit.framework.Assert.fail;
 
 public class DOTInputParserTest {
 
-    DOTInputParser _parser;
-    Map<Integer, Task> _taskMap;
+    private DOTInputParser _parser;
+    private Map<Integer, Task> _taskMap;
 
     /**
      * This method initializes a new DOTInputParser
