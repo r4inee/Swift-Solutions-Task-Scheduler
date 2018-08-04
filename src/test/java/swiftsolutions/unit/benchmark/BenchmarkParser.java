@@ -24,7 +24,7 @@ public class BenchmarkParser {
 
 	public void catagoriseFiles() {
 
-		
+
 
 
 
@@ -34,44 +34,47 @@ public class BenchmarkParser {
 			//String[1]: type
 			//String[3]: nodes
 			String[] name = file.getName().split("_");
-			if(name[3].equals("Nodes")) {name[3] = name [4];}
+			if(name.length >= 4) {
+				
+				if(name[3].equals("Nodes")) {name[3] = name [4];}
 
-			if(!_processorCatagory.containsKey(name[0])) {
+				if(!_processorCatagory.containsKey(name[0])) {
 
-				ArrayList<File> newCat = new ArrayList<File>();
-				newCat.add(file);
-				_processorCatagory.put(name[0], newCat);
+					ArrayList<File> newCat = new ArrayList<File>();
+					newCat.add(file);
+					_processorCatagory.put(name[0], newCat);
 
-			}else {
+				}else {
 
-				_processorCatagory.get(name[0]).add(file);
+					_processorCatagory.get(name[0]).add(file);
+
+				}
+
+				if(!_typeCatagory.containsKey(name[1])) {
+
+					ArrayList<File> newCat = new ArrayList<File>();
+					newCat.add(file);
+					_typeCatagory.put(name[1], newCat);
+
+				}else {
+
+					_typeCatagory.get(name[1]).add(file);
+
+				}
+
+				if(!_nodesCatagory.containsKey(name[3])) {
+
+					ArrayList<File> newCat = new ArrayList<File>();
+					newCat.add(file);
+					_nodesCatagory.put(name[3], newCat);
+
+				}else {
+
+					_nodesCatagory.get(name[3]).add(file);
+
+				}
 
 			}
-
-			if(!_typeCatagory.containsKey(name[1])) {
-
-				ArrayList<File> newCat = new ArrayList<File>();
-				newCat.add(file);
-				_typeCatagory.put(name[1], newCat);
-
-			}else {
-
-				_typeCatagory.get(name[1]).add(file);
-
-			}
-
-			if(!_nodesCatagory.containsKey(name[3])) {
-
-				ArrayList<File> newCat = new ArrayList<File>();
-				newCat.add(file);
-				_nodesCatagory.put(name[3], newCat);
-
-			}else {
-
-				_nodesCatagory.get(name[3]).add(file);
-
-			}
-
 		}
 
 	}
@@ -81,23 +84,23 @@ public class BenchmarkParser {
 		return _processorCatagory;
 
 	}
-	
+
 	public Map<String, ArrayList<File>> getTypeCatagory(){
 
 		return _typeCatagory;
 
 	}
-	
+
 	public Map<String, ArrayList<File>> getNodesCatagory(){
 
 		return _nodesCatagory;
 
 	}
-	
+
 	public ArrayList<File> getAllGraphs(){
-				
+
 		return new ArrayList<File>(Arrays.asList(_graphs));
-		
+
 	}
 
 
