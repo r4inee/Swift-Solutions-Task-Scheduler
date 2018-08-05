@@ -20,9 +20,15 @@ public class DOTOutputWriter implements OutputWriter {
     @Override
     public void serialize(String filename, Schedule schedule, Map<Integer, Task> taskMap) throws OutputException {
         _taskMap = taskMap;
+        String outputFile = new File(filename).getName();
+        if (outputFile.length() > 1) {
+            outputFile = outputFile.substring(0, 1).toUpperCase() + outputFile.substring(1);
+        } else {
+            outputFile = outputFile.toUpperCase();
+        }
+
         try {
-            String outputFile = new File(filename).getName();
-            _writer = new BufferedWriter(new FileWriter(outputFile));
+            _writer = new BufferedWriter(new FileWriter("output-" + outputFile));
             _writer.write("digraph \"output" + outputFile + "\" {\n");
 
             for (Integer task : taskMap.keySet()) {
@@ -52,7 +58,7 @@ public class DOTOutputWriter implements OutputWriter {
     }
 
     private void writeEdge(Integer parentTask, Integer childTask, int weight) throws IOException {
-        _writer.write("\t\t"  + _taskMap.get(parentTask).getTaskID() + "->"
+        _writer.write("\t\t"  + _taskMap.get(parentTask).getTaskID() + " -> "
                 + _taskMap.get(childTask).getTaskID() + "\t[Weight=" + weight + "];\n");
     }
 }
