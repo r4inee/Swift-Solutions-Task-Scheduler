@@ -17,6 +17,7 @@ import swiftsolutions.output.OutputType;
 import swiftsolutions.cli.CLIArgumentParser;
 import swiftsolutions.taskscheduler.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -88,6 +89,8 @@ public class Scheduler {
         Schedule outputSchedule = algorithm.execute(tasks);
 
         long end = System.currentTimeMillis();
+        outputSchedule.convertTaskID(tasks);
+        Map<Integer, Task> taskMap = convertTaskID(tasks);
 
         _outputManager.send(new OutputMessage(OutputType.SUCCESS,
                 "Successfully ran algorithm in " + (end - start) + "ms!"));
@@ -98,7 +101,7 @@ public class Scheduler {
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Writing schedule to file..."));
 
         try {
-            _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, tasks);
+            _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, taskMap);
         } catch (OutputException e) {
             _outputManager.send(new OutputMessage(OutputType.DEBUG, e.getMessage()));
         }
@@ -108,5 +111,13 @@ public class Scheduler {
 
     public void setOutputManager(OutputManager outputManager) {
         this._outputManager = outputManager;
+    }
+
+    private Map<Integer, Task> convertTaskID(Map<Integer, Task> tasks) {
+        Map<Integer, Task> newTaskMap = new HashMap<>();
+        for (Integer offsetID : tasks.keySet()) {
+            newTaskMap.put(tasks.get(offsetID).getTaskID(), tasks.get(offsetID));
+        }
+        return newTaskMap;
     }
 }
