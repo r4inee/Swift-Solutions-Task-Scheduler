@@ -40,7 +40,7 @@ public class ScheduleTest {
         taskToProcAndStrtTime2.put(5, new Pair(2, 4));
         taskToProcAndStrtTime2.put(6, new Pair(2, 5));
 
-        _schedule2 = new Schedule(taskToProcAndStrtTime2, 2);
+        _schedule2 = new Schedule(taskToProcAndStrtTime2, 3);
 
     }
 
@@ -101,6 +101,8 @@ public class ScheduleTest {
 
     @Test
     public void testGetNumProc() {
+        assertEquals(2, _schedule1.getNumProc());
+        assertEquals(3, _schedule2.getNumProc());
 
     }
 
