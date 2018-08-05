@@ -11,7 +11,7 @@ public class VerboseOption extends CLIOption<Boolean>{
     }
 
     /**
-     * Verifies the number of argum
+     * Verifies the number of arguments is correct
      * @param args
      * @throws ArgumentFormatException
      */
