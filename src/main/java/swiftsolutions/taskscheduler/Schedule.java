@@ -20,6 +20,15 @@ public class Schedule {
 		_numProc = numProc;
 	}
 
+	public void convertTaskID(Map<Integer, Task> taskMap) {
+		Map<Integer, Pair<Integer, Integer>> map = new HashMap<>();
+		for (Integer offsetID : _taskToProcessorMap.keySet()) {
+			Integer id = taskMap.get(offsetID).getTaskID();
+			map.put(id, _taskToProcessorMap.get(offsetID));
+		}
+		_taskToProcessorMap = map;
+	}
+
 	private Map<Integer, ArrayList<Integer>> splitByProcessor() {
 		Map<Integer, ArrayList<Integer>> procMap = new HashMap<>();
 		for (Integer taskID : _taskToProcessorMap.keySet()) {
