@@ -41,11 +41,11 @@ public class GraphRunnerBenchmark {
 		BenchmarkAppRunner _runner = new BenchmarkAppRunner(1);
 		BenchmarkParser _benchmarkParser = new BenchmarkParser("src/test/resources/test_graphs_full_name/");
 		_benchmarkParser.catagoriseFiles();
-		ArrayList<File> nodeGraphs10 = _benchmarkParser.getNodesCatagory().get("10");
+		ArrayList<File> nodeGraphs10 = _benchmarkParser.getNodesCatagory().get("21");
 		ArrayList<File> allGraphs = _benchmarkParser.getAllGraphs();
 		//_runner.addSingle(new File("C:/Users/User/Documents/uni/306/project1/SOFTENG306_Project1/src/test/resources/test_graphs_full_name/16p_Fork_Join_Nodes_10_CCR_0.10_WeightType_Random.dot"));
 		//_runner.addSingle(new File("C:/Users/User/Documents/uni/306/project1/SOFTENG306_Project1/src/test/resources/test_graphs_full_name/16p_Fork_Join_Nodes_21_CCR_0.10_WeightType_Random.dot"));
-		_runner.addList(allGraphs);
+		_runner.addList(nodeGraphs10);
 		_runner.runAll();
 		System.out.println(_runner.getOutputs().toString());
     }
