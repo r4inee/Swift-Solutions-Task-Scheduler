@@ -22,13 +22,13 @@ import java.util.Map;
 /**
  * Created by Winston on 7/31/2018.
  */
-public class Context {
+public class Scheduler {
 
-    private static Context _instance;
+    private static Scheduler _instance;
 
-    public static Context getContext() {
+    public static Scheduler getContext() {
         if (_instance == null) {
-            _instance = new Context();
+            _instance = new Scheduler();
         }
         return _instance;
     }
@@ -42,7 +42,7 @@ public class Context {
     private OutputWriter _outputWriter;
 
 
-    private Context() {
+    private Scheduler() {
         _outputManager = new AppOutputManager();
         _argumentParser = new CLIArgumentParser();
         _algorithmFactory = new SchedulingAlgorithmFactory();
