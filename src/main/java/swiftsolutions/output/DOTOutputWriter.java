@@ -21,14 +21,20 @@ public class DOTOutputWriter implements OutputWriter {
     public void serialize(String filename, Schedule schedule, Map<Integer, Task> taskMap) throws OutputException {
         _taskMap = taskMap;
         String outputFile = new File(filename).getName();
+        String outputFileName = new File(filename).getName();
         if (outputFile.length() > 1) {
             outputFile = outputFile.substring(0, 1).toUpperCase() + outputFile.substring(1);
         } else {
             outputFile = outputFile.toUpperCase();
         }
 
+        if(outputFile.lastIndexOf(".") != -1 && outputFile.lastIndexOf(".") != 0) {
+            outputFile = outputFile.substring(0, outputFile.lastIndexOf("."));
+            outputFileName = outputFileName.substring(0, outputFileName.lastIndexOf("."));
+        }
+
         try {
-            _writer = new BufferedWriter(new FileWriter("output-" + outputFile));
+            _writer = new BufferedWriter(new FileWriter(outputFileName + "-output.dot"));
             _writer.write("digraph \"output" + outputFile + "\" {\n");
 
             for (Integer task : taskMap.keySet()) {

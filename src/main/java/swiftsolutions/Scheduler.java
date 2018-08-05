@@ -101,7 +101,11 @@ public class Scheduler {
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Writing schedule to file..."));
 
         try {
-            _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, taskMap);
+            if (_argumentParser.getOutputFile() != null) {
+                _outputWriter.serialize(_argumentParser.getOutputFile(), outputSchedule, taskMap);
+            } else {
+                _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, taskMap);
+            }
         } catch (OutputException e) {
             _outputManager.send(new OutputMessage(OutputType.DEBUG, e.getMessage()));
         }
