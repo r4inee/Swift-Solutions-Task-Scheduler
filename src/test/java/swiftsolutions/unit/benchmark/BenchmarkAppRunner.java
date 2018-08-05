@@ -95,7 +95,7 @@ public class BenchmarkAppRunner {
 			}
 		}
 
-		System.out.println("!!done!!");
+		System.out.println("\n!!done!!");
 	}
 
 	public Map<String, Long> getOutputs() {
