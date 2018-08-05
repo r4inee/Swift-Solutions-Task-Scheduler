@@ -11,6 +11,8 @@ public interface ArgumentParser  {
 
     public String getFile();
 
+    public String getOutputFile();
+
     public int getProcessors();
 
     public CoresOption getCoresOption();
