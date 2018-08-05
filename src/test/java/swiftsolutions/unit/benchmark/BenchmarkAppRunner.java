@@ -75,14 +75,16 @@ public class BenchmarkAppRunner {
 				future = executor.invokeAll(Arrays.asList(new Runner(runnable, tasks, getProcs(runnable))), _timeout, TimeUnit.SECONDS);
 				long end = System.currentTimeMillis();
 				_outputs.put(runnable.getName(), end - start);
-				
-				if(!future.get(0).isDone()) {
-					System.out.println(future.get(0).get().getOutputString());
-				}
-				
+
+				try {
 				System.out.println("graph:" + runnable.getName() + " ran in: " + (end - start) + "ms"  );
-				
+				System.out.println(future.get(0).get().getOutputString());
+				}catch(Exception e) {
+				System.out.println("no solution");
+				}
+
 				executor.shutdownNow();
+
 				if(future.get(0).isCancelled()) {
 					_timedOutGraphs.add(runnable.getName());
 					System.out.println(runnable.getName() + " took more than " + _timeout + " seconds to run ");
