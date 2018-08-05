@@ -23,4 +23,13 @@ public class Pair<A,B> implements Serializable{
         public B getB(){
             return _b;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+            Pair pair = (Pair) obj;
+            return (pair.getA().equals(_a) && pair.getB().equals(_b));
+        }
 }
