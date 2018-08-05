@@ -17,18 +17,19 @@ import swiftsolutions.output.OutputType;
 import swiftsolutions.cli.CLIArgumentParser;
 import swiftsolutions.taskscheduler.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by Winston on 7/31/2018.
  */
-public class Context {
+public class Scheduler {
 
-    private static Context _instance;
+    private static Scheduler _instance;
 
-    public static Context getContext() {
+    public static Scheduler getContext() {
         if (_instance == null) {
-            _instance = new Context();
+            _instance = new Scheduler();
         }
         return _instance;
     }
@@ -42,7 +43,7 @@ public class Context {
     private OutputWriter _outputWriter;
 
 
-    private Context() {
+    private Scheduler() {
         _outputManager = new AppOutputManager();
         _argumentParser = new CLIArgumentParser();
         _algorithmFactory = new SchedulingAlgorithmFactory();
@@ -88,6 +89,8 @@ public class Context {
         Schedule outputSchedule = algorithm.execute(tasks);
 
         long end = System.currentTimeMillis();
+        outputSchedule.convertTaskID(tasks);
+        Map<Integer, Task> taskMap = convertTaskID(tasks);
 
         _outputManager.send(new OutputMessage(OutputType.SUCCESS,
                 "Successfully ran algorithm in " + (end - start) + "ms!"));
@@ -98,7 +101,11 @@ public class Context {
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Writing schedule to file..."));
 
         try {
-            _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, tasks);
+            if (_argumentParser.getOutputFile() != null) {
+                _outputWriter.serialize(_argumentParser.getOutputFile(), outputSchedule, taskMap);
+            } else {
+                _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, taskMap);
+            }
         } catch (OutputException e) {
             _outputManager.send(new OutputMessage(OutputType.DEBUG, e.getMessage()));
         }
@@ -108,5 +115,13 @@ public class Context {
 
     public void setOutputManager(OutputManager outputManager) {
         this._outputManager = outputManager;
+    }
+
+    private Map<Integer, Task> convertTaskID(Map<Integer, Task> tasks) {
+        Map<Integer, Task> newTaskMap = new HashMap<>();
+        for (Integer offsetID : tasks.keySet()) {
+            newTaskMap.put(tasks.get(offsetID).getTaskID(), tasks.get(offsetID));
+        }
+        return newTaskMap;
     }
 }

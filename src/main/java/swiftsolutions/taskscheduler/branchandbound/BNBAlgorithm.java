@@ -85,7 +85,7 @@ public class BNBAlgorithm implements Algorithm {
      */
     public HashMap<Integer, BNBTask> convertTasks() {
         HashMap<Integer, BNBTask> tasks = new HashMap<>();
-        _taskMap.forEach((Integer integer, Task task) -> tasks.put(task.getTaskID(), new BNBTask(task, task.getTaskID())));
+        _taskMap.forEach((Integer integer, Task task) -> tasks.put(integer, new BNBTask(task, integer)));
         return tasks;
     }
 

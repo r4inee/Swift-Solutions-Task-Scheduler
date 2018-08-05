@@ -13,6 +13,7 @@ import java.util.ArrayList;
 public class CLIArgumentParser implements ArgumentParser {
 
     private String _file;
+    private String _outputFile;
     private int _processors;
     private CoresOption _coresOption;
     private VisualizeOption _visualizeOption;
@@ -25,9 +26,9 @@ public class CLIArgumentParser implements ArgumentParser {
         // Initialize active options
         _coresOption = new CoresOption();
         _visualizeOption = new VisualizeOption();
-        _outputOption = new OutputOption();
         _directoryOption = new DirectoryOption();
         _verboseOption = new VerboseOption();
+        _outputOption = new OutputOption();
 
         _options = new ArrayList<>();
         _options.add(_coresOption);
@@ -99,6 +100,9 @@ public class CLIArgumentParser implements ArgumentParser {
         for (CLIOption option : _options) {
             if (option.getFlag().equals(flag)) {
                 option.verifyArgs(args);
+                if (option.getFlag().equals("o")) {
+                    _outputFile = (String)option.getArgs();
+                }
             }
         }
     }
@@ -109,6 +113,10 @@ public class CLIArgumentParser implements ArgumentParser {
      */
     public String getFile() {
         return _file;
+    }
+
+    public String getOutputFile() {
+        return _outputFile;
     }
 
     /**
