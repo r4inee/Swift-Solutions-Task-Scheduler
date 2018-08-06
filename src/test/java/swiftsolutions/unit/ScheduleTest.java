@@ -82,19 +82,19 @@ public class ScheduleTest {
         // -> -1 processTime means is arbitrary value (for when cannot infer from Schedule what it actually is)
 
         // schedule 1
-        assertEquals(new Pair(0, 0), _schedule1.getProcessor(new Task(0, 2)));
-        assertEquals(new Pair(0, 2), _schedule1.getProcessor(new Task(1, -1)));
-        assertEquals(new Pair(1, 0), _schedule1.getProcessor(new Task(2, 3)));
-        assertEquals(new Pair(1, 3), _schedule1.getProcessor(new Task(3, -1)));
+        assertEquals(new Pair(0, 0), _schedule1.getProcessor(new Task(0, 2).getTaskID()));
+        assertEquals(new Pair(0, 2), _schedule1.getProcessor(new Task(1, -1).getTaskID()));
+        assertEquals(new Pair(1, 0), _schedule1.getProcessor(new Task(2, 3).getTaskID()));
+        assertEquals(new Pair(1, 3), _schedule1.getProcessor(new Task(3, -1).getTaskID()));
 
         // schedule 2
-        assertEquals(new Pair(0, 0), _schedule2.getProcessor(new Task(0, 2)));
-        assertEquals(new Pair(0, 2), _schedule2.getProcessor(new Task(1, -1)));
-        assertEquals(new Pair(1, 0), _schedule2.getProcessor(new Task(2, 3)));
-        assertEquals(new Pair(1, 3), _schedule2.getProcessor(new Task(3, 3)));
-        assertEquals(new Pair(1, 6), _schedule2.getProcessor(new Task(4, -1)));
-        assertEquals(new Pair(2, 4), _schedule2.getProcessor(new Task(5, 1)));
-        assertEquals(new Pair(2, 5), _schedule2.getProcessor(new Task(6, -1)));
+        assertEquals(new Pair(0, 0), _schedule2.getProcessor(new Task(0, 2).getTaskID()));
+        assertEquals(new Pair(0, 2), _schedule2.getProcessor(new Task(1, -1).getTaskID()));
+        assertEquals(new Pair(1, 0), _schedule2.getProcessor(new Task(2, 3).getTaskID()));
+        assertEquals(new Pair(1, 3), _schedule2.getProcessor(new Task(3, 3).getTaskID()));
+        assertEquals(new Pair(1, 6), _schedule2.getProcessor(new Task(4, -1).getTaskID()));
+        assertEquals(new Pair(2, 4), _schedule2.getProcessor(new Task(5, 1).getTaskID()));
+        assertEquals(new Pair(2, 5), _schedule2.getProcessor(new Task(6, -1).getTaskID()));
 
 
     }
