@@ -5,10 +5,12 @@ import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
 
 import java.util.Map;
+import java.util.Queue;
 
 public class BBAAlgorithm implements Algorithm{
 
     private int _numProcessors;
+    private Schedule _schedule;
 
     /**
      * Overrides Algorithm execute
