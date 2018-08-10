@@ -57,7 +57,7 @@ public class BNBAlgorithm implements Algorithm {
         // Set an initial bound
         _bound = Integer.MAX_VALUE;
 
-        // Star the algorithm
+        // Start the algorithm
         dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors));
 
         return convertSchedule(_optimalSchedule);
