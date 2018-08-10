@@ -10,8 +10,10 @@ public class BBAAlgorithm implements Algorithm{
 
     private int _numProcessors;
     private int[][] _taskMap; // rows = task, col = {cost, bottom-level}
+    private int[][] _processMap; // rows = processor, col = end time
     private int[][] _parentMap; // row = task, col = parents, value = 1 or 0
     private int[][] _comCostMap; // row = task, col = parent, value = communication cost
+    private int[][] _bestFState; // output
 
     public static final int POS_PROC = 0;
 
@@ -56,18 +58,17 @@ public class BBAAlgorithm implements Algorithm{
                      int previousProcessor, int numFreeTasks, int depth, int[][] s,
                      int bestFState, int B){
         int done = 0; //exit flag
-        int[] free = free(s);
-        if (free.length != 0) {
+        int[] freeTasks = free(s);
+        if (freeTasks.length != 0) {
             for (int i = 0; i < numFreeTasks; i++) {
                 for (int j = 0; j < _numProcessors; j++) {
                     depth++;
                     sanitizeSchedule();
-                    numFreeTasks = free.length;
+                    numFreeTasks = freeTasks.length;
 
                 }
             }
         }
-
     }
 
     private void addTask(int[][] s, int task, int processor){
