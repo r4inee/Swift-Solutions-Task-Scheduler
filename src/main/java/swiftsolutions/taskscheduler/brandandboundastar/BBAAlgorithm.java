@@ -3,8 +3,10 @@ package swiftsolutions.taskscheduler.brandandboundastar;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
+import swiftsolutions.util.Pair;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -13,6 +15,9 @@ public class BBAAlgorithm implements Algorithm{
     private int _numProcessors;
     private int[][] _taskMap; // rows = task, col = {id, process time, number of dependencies, bottom-level}
     private int[][] _processMap; // rows = processor, col = end time
+    private int[][] _scheduleMap; // rows = processor, col = end time
+    private List<Integer[][]> _schedules;
+    private Map<Integer, Pair<Integer, Integer>> _map;
     private int[][] _parentMap; // row = task, col = parents, value = 1 or 0
     private int[][] _comCostMap; // row = task, col = parent, value = communication cost
     private int[][] _bestFState; // output
@@ -25,6 +30,8 @@ public class BBAAlgorithm implements Algorithm{
     public static final int TASK_COST = 1;
     public static final int NUM_DEP = 2;
     public static final int BOTT_LVL = 3;
+    // used for processMap
+    public static final int END_TIME = 0;
 
 
 
@@ -84,34 +91,32 @@ public class BBAAlgorithm implements Algorithm{
     }
 
     private void addTask(int[][] s, int task, int processor){
-        s[task][POS_PROC] =  processor;
 
-
-
-        //
     }
 
     private int[] free() {
-
         Set<Integer> freeTasksSet = new HashSet<>();
-
-        for (int i = 0; i < _taskMap.length; i++) {
+        for (int[] a_taskMap : _taskMap) {
             // check if task has all its parents scheduled
-            if (_taskMap[i][NUM_DEP] == 0) {
-                freeTasksSet.add(_taskMap[i][0]);
+            if (a_taskMap[NUM_DEP] == 0) {
+                freeTasksSet.add(a_taskMap[TASK_ID]);
             }
         }
-
         // remove any task from the set that themseves have already been scheduled
-        for (int i = 0; i < _scheduledTasks.length; i++) {
-            if (freeTasksSet.contains(i)) {
-                freeTasksSet.remove(i);
+        for (int _scheduledTask : _scheduledTasks) {
+            if (freeTasksSet.contains(_scheduledTask)) {
+                freeTasksSet.remove(_scheduledTask);
             }
         }
-
+        freeTasksSet = orderFreeTasks(freeTasksSet);
         // convert to int[]
         int[] freeTasks = freeTasksSet.stream().mapToInt(Integer::intValue).toArray();
         return freeTasks;
+    }
+
+    private Set<Integer> orderFreeTasks(Set<Integer> freeTasks){
+
+        return null;
     }
 
     private void sanitizeSchedule(){
