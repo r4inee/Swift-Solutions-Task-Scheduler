@@ -76,21 +76,29 @@ public class BBAAlgorithm implements Algorithm{
     private void BBA(int currentTask, int currentProcessor, int previousTask,
                      int previousProcessor, int numFreeTasks, int depth, int[][] s, int B){
         int done = 0; //exit flag
+        boolean backtrack = false;
         Queue<Integer> freeTasks = free();
         if (freeTasks.size() != 0) {
             for (int i = 0; i < numFreeTasks; i++) {
+                int poppedtask = freeTasks.remove();
                 for (int j = 0; j < _numProcessors; j++) {
                     depth++;
-                    sanitizeSchedule();
+                    if (backtrack){
+                        sanitizeSchedule(s);
+                    }
                     numFreeTasks = freeTasks.size();
-
+                    addTask(s,poppedtask,j);
                 }
             }
         }
     }
 
-    private void addTask(int[][] s, int task, int processor){
+    private void sanitizeSchedule(int[][] s) {
 
+    }
+
+    private void addTask(int[][] s, int task, int processor){
+        s[processor][]
     }
 
     private Queue<Integer> free() {
@@ -117,9 +125,6 @@ public class BBAAlgorithm implements Algorithm{
         return null;
     }
 
-    private void sanitizeSchedule(){
-
-    }
     private void listHeuristic(){
 
     }
