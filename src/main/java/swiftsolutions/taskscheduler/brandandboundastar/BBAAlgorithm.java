@@ -15,12 +15,10 @@ public class BBAAlgorithm implements Algorithm{
     private int[][] _processMap; // rows = processor, col = end time
     private int[][] _scheduleMap; // rows = processor, col = end time
     private List<Integer[][]> _schedules;
-    private Map<Integer, Pair<Integer, Integer>> _scheduleInheritanceMap; // maps a schedule to parent and children
-    private Map<Integer, Integer[][]> _scheduleIDMap; // maps an ID for a schedule
     private int[][] _parentMap; // row = task, col = parents, value = 1 or 0
     private int[][] _comCostMap; // row = task, col = parent, value = communication cost
     private int[][] _bestFState; // output
-    private int[] _scheduledTasks; // scheduled tasks
+    private List<Integer> _scheduledTasks; // scheduled tasks
 
     // used for schedules in general (including _bestFState)
     public static final int POS_PROC = 0;
@@ -73,32 +71,57 @@ public class BBAAlgorithm implements Algorithm{
      * @param depth
      * @param B
      */
-    private void BBA(int currentTask, int currentProcessor, int previousTask,
+    private int BBA(int currentTask, int currentProcessor, int previousTask,
                      int previousProcessor, int numFreeTasks, int depth, int[][] s, int B){
         int done = 0; //exit flag
-        boolean backtrack = false;
-        Queue<Integer> freeTasks = free();
+        boolean backtrack = false; //backtrack flag
+        Queue<Integer> freeTasks = free(); //priority queue for tasks based on cost function
+        int[][] processorIndex = new int[_numProcessors][]; // index for each processor
         if (freeTasks.size() != 0) {
             for (int i = 0; i < numFreeTasks; i++) {
-                int poppedtask = freeTasks.remove();
-                for (int j = 0; j < _numProcessors; j++) {
+                int poppedTask = freeTasks.remove(); //take the first task of the queue
+                for (int j = 0; j < _numProcessors; j++) { //add the task to all processors
                     depth++;
                     if (backtrack){
                         sanitizeSchedule(s);
                     }
                     numFreeTasks = freeTasks.size();
-                    addTask(s,poppedtask,j);
+                    addTask(s,poppedTask,j,processorIndex[j][0]);
+                    processorIndex[j][0]++;
+                    previousTask = currentTask;
+                    previousProcessor = currentProcessor;
+                    currentTask = poppedTask;
+                    currentProcessor = j;
+                    if (cost(s) <= B && depth == _taskMap.length){
+                        _bestFState = s;
+                        B = cost(s);
+                        return 1;
+                    }
+                    if (cost(s) <= B && depth <= _taskMap.length){
+                        done = BBA(currentTask,currentProcessor,previousTask,previousProcessor,numFreeTasks,depth,s,B);
+                    }
+                    if (done == 0){
+                        backtrack=true;
+                        depth--;
+                    }
+
                 }
             }
         }
+        return 1;
+    }
+
+    private int cost(int[][] s) {
+        return 1;
     }
 
     private void sanitizeSchedule(int[][] s) {
 
     }
 
-    private void addTask(int[][] s, int task, int processor){
-        s[processor][]
+    private void addTask(int[][] s, int task, int processor, int processorIndex){
+        s[processor][processorIndex] = task;
+        _scheduledTasks.add(task);
     }
 
     private Queue<Integer> free() {
