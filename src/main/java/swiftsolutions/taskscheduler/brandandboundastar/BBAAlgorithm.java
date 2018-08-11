@@ -1,14 +1,12 @@
 package swiftsolutions.taskscheduler.brandandboundastar;
 
+import org.omg.PortableInterceptor.INACTIVE;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
 import swiftsolutions.util.Pair;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class BBAAlgorithm implements Algorithm{
 
@@ -17,11 +15,12 @@ public class BBAAlgorithm implements Algorithm{
     private int[][] _processMap; // rows = processor, col = end time
     private int[][] _scheduleMap; // rows = processor, col = end time
     private List<Integer[][]> _schedules;
-    private Map<Integer, Pair<Integer, Integer>> _map;
+    private Map<Integer, Pair<Integer, Integer>> _scheduleInheritanceMap; // maps a schedule to parent and children
+    private Map<Integer, Integer[][]> _scheduleIDMap; // maps an ID for a schedule
     private int[][] _parentMap; // row = task, col = parents, value = 1 or 0
     private int[][] _comCostMap; // row = task, col = parent, value = communication cost
     private int[][] _bestFState; // output
-    private int[] _scheduledTasks;
+    private int[] _scheduledTasks; // scheduled tasks
 
     // used for schedules in general (including _bestFState)
     public static final int POS_PROC = 0;
@@ -77,13 +76,13 @@ public class BBAAlgorithm implements Algorithm{
     private void BBA(int currentTask, int currentProcessor, int previousTask,
                      int previousProcessor, int numFreeTasks, int depth, int[][] s, int B){
         int done = 0; //exit flag
-        int[] freeTasks = free();
-        if (freeTasks.length != 0) {
+        Queue<Integer> freeTasks = free();
+        if (freeTasks.size() != 0) {
             for (int i = 0; i < numFreeTasks; i++) {
                 for (int j = 0; j < _numProcessors; j++) {
                     depth++;
                     sanitizeSchedule();
-                    numFreeTasks = freeTasks.length;
+                    numFreeTasks = freeTasks.size();
 
                 }
             }
@@ -94,7 +93,7 @@ public class BBAAlgorithm implements Algorithm{
 
     }
 
-    private int[] free() {
+    private Queue<Integer> free() {
         Set<Integer> freeTasksSet = new HashSet<>();
         for (int[] a_taskMap : _taskMap) {
             // check if task has all its parents scheduled
@@ -102,20 +101,19 @@ public class BBAAlgorithm implements Algorithm{
                 freeTasksSet.add(a_taskMap[TASK_ID]);
             }
         }
-        // remove any task from the set that themseves have already been scheduled
+        // remove any task from the set that themselves have already been scheduled
         for (int _scheduledTask : _scheduledTasks) {
             if (freeTasksSet.contains(_scheduledTask)) {
                 freeTasksSet.remove(_scheduledTask);
             }
         }
-        freeTasksSet = orderFreeTasks(freeTasksSet);
         // convert to int[]
         int[] freeTasks = freeTasksSet.stream().mapToInt(Integer::intValue).toArray();
-        return freeTasks;
+        Queue<Integer> freeTaskQueue = orderFreeTasks(freeTasks);
+        return freeTaskQueue;
     }
 
-    private Set<Integer> orderFreeTasks(Set<Integer> freeTasks){
-
+    private Queue<Integer> orderFreeTasks(int[] freeTasks){
         return null;
     }
 
