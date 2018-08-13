@@ -1,6 +1,5 @@
 package swiftsolutions.taskscheduler.branchandbound;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -9,7 +8,7 @@ import java.util.Stack;
 /**
  * Class that represents a schedule optimized for branch and bound.
  */
-public class BNBSchedule implements Serializable{
+public class BNBSchedule {
 
     public static final int START_TIME = 0;
     public static final int END_TIME = 1;
@@ -19,7 +18,7 @@ public class BNBSchedule implements Serializable{
     int _numTasks;
     int[][] _schedule;
     int[] _procEndTimes;
-    int _firstEmptyProcessor;
+    int[] _firstTask;
 
     /**
      * Normal constructor
@@ -29,12 +28,14 @@ public class BNBSchedule implements Serializable{
     public BNBSchedule(int numTasks, int numProc) {
         _numTasks = numTasks;
         _schedule = new int[_numTasks][3];
+        _firstTask = new int[numTasks];
 
         // Initialize empty schedule
         for (int i = 0; i < _schedule.length; i++) {
             for (int j = 0; j < _schedule[0].length; j++) {
                 _schedule[i][j] = _schedule[i][j] = EMPTY;
             }
+            _firstTask[i] = EMPTY;
         }
 
         _procEndTimes = new int[numProc];
@@ -43,10 +44,11 @@ public class BNBSchedule implements Serializable{
     /**
      * Constructor used for cloning
      */
-    public BNBSchedule(int numTasks, int[][] schedule, int[] procEndTimes) {
+    public BNBSchedule(int numTasks, int[][] schedule, int[] procEndTimes, int[] firstTask) {
         _numTasks = numTasks;
         _schedule = schedule;
         _procEndTimes = procEndTimes;
+        _firstTask = firstTask;
     }
 
     /**
@@ -62,7 +64,7 @@ public class BNBSchedule implements Serializable{
             }
         }
 
-        return new BNBSchedule(_numTasks, scheduleCopy, Arrays.copyOf(_procEndTimes, _procEndTimes.length));
+        return new BNBSchedule(_numTasks, scheduleCopy, Arrays.copyOf(_procEndTimes, _procEndTimes.length), _firstTask);
     }
 
     /**
@@ -97,6 +99,10 @@ public class BNBSchedule implements Serializable{
             taskStart = offset;
         }
 
+        if (_firstTask[proc] == -1) {
+            _firstTask[proc] = task._id;
+        }
+
         // Update schedule and endProcTime to reflect the addition
         _procEndTimes[proc] = taskStart + task._procTime;
         _schedule[task._id][START_TIME] = taskStart;
@@ -119,22 +125,6 @@ public class BNBSchedule implements Serializable{
         }
         return max;
     }
-
-    /**
-     * Get the id of the first empty processor
-     * @return time id of the first empty processor
-     */
-    public int getFirstEmptyProcessor() {
-        return _firstEmptyProcessor;
-    }
-    /**
-     * Set the id of the first empty processor
-     * @return time id of the first empty processor
-     */
-    public void incFirstEmptyProcessor() {
-        _firstEmptyProcessor++;
-    }
-
 
     /**
      * Hashcode for pruning
@@ -180,5 +170,14 @@ public class BNBSchedule implements Serializable{
         BNBSchedule other = (BNBSchedule)obj;
 
         return other.hashCode() == hashCode();
+    }
+
+    public int getFirstEmptyProc() {
+        for (int i = 0; i < _firstTask.length; i++) {
+            if (_firstTask[i] == EMPTY) {
+                return i;
+            }
+        }
+        return _firstTask.length;
     }
 }
