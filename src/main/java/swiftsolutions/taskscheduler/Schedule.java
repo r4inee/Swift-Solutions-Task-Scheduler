@@ -1,9 +1,6 @@
 package swiftsolutions.taskscheduler;
 
-import javafx.beans.binding.IntegerBinding;
 import swiftsolutions.util.Pair;
-
-import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -68,5 +65,8 @@ public class Schedule {
 	}
 	public int getNumProc() {
 		return _numProc;
+	}
+	public Map<Integer, Pair<Integer, Integer>> getTaskToProcessorMap() {
+		return _taskToProcessorMap;
 	}
 }
