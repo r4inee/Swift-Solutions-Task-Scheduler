@@ -6,6 +6,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+/*
+ * Used to return a list of all files in folder
+ * catagorises files based on attributes
+ * file objects may be used to pass into benchmark runner
+ */
 public class BenchmarkParser {
 
 	private String _folder;
@@ -33,7 +38,8 @@ public class BenchmarkParser {
 			if(name.length >= 4) {
 				
 				if(name[3].equals("Nodes")) {name[3] = name [4];}
-
+				
+				//checks processors for graph file, puts into appropriate category
 				if(!_processorCatagory.containsKey(name[0])) {
 
 					ArrayList<File> newCat = new ArrayList<File>();
@@ -46,6 +52,7 @@ public class BenchmarkParser {
 
 				}
 
+				//checks type for graph file, puts into appropriate category
 				if(!_typeCatagory.containsKey(name[1])) {
 
 					ArrayList<File> newCat = new ArrayList<File>();
@@ -58,6 +65,7 @@ public class BenchmarkParser {
 
 				}
 
+				//checks number of nodes for graph file, puts into appropriate category
 				if(!_nodesCatagory.containsKey(name[3])) {
 
 					ArrayList<File> newCat = new ArrayList<File>();
@@ -75,6 +83,7 @@ public class BenchmarkParser {
 
 	}
 
+	//get all files belonging to each category
 	public Map<String, ArrayList<File>> getProcessorCatagory(){
 
 		return _processorCatagory;
@@ -93,6 +102,7 @@ public class BenchmarkParser {
 
 	}
 
+	//get all files in the entire folder
 	public ArrayList<File> getAllGraphs(){
 
 		return new ArrayList<File>(Arrays.asList(_graphs));
