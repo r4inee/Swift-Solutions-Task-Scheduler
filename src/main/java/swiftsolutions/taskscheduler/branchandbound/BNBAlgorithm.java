@@ -59,7 +59,9 @@ public class BNBAlgorithm implements Algorithm {
         _bound = Integer.MAX_VALUE;
 
         // Star the algorithm
-        dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors));
+        dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors), null);
+
+        System.out.println(_branchCount);
         return convertSchedule(_optimalSchedule);
     }
 
@@ -113,7 +115,7 @@ public class BNBAlgorithm implements Algorithm {
      * @param upperBound the current best schedule founds cost function
      * @param schedule the current schedule
      */
-    private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule) {
+    private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule, Queue<BNBTask> fto) {
         _branchCount++;
 
         // If the lower bound of the current schedule is larger than the upper bound, return;
@@ -122,11 +124,11 @@ public class BNBAlgorithm implements Algorithm {
         }
 
         // If we've seen a similar schedule return, if not add it.
-        if (_seenSchedules.contains(schedule)) {
-            return;
-        } else {
-            _seenSchedules.add(schedule);
-        }
+//        if (_seenSchedules.contains(schedule)) {
+//            return;
+//        } else {
+//            _seenSchedules.add(schedule);
+//        }
 
         // If we've finished then we update the optimal schedule and bound if the new schedule is better.
         if (tasks.isEmpty()) {
@@ -146,43 +148,65 @@ public class BNBAlgorithm implements Algorithm {
 
         // For try schedule each available task to each schedule
         for (int i = 0; i < _numProcessors; i++) {
-//            if (i > schedule.getFirstEmptyProcessor()) {
-//                continue;
-//            } else if (i == schedule.getFirstEmptyProcessor()) {
-//                // if not fix task order
-//                schedule.incFirstEmptyProcessor();
-//                //else
-////                    if (availableTask._id > schedule.getMaxTaskID()) {
-////                          schedule.setMaxTaskID(i);
-////                    schedule.incFirstEmptyProcessor();
-////                    }
-//            }
+            if (i > schedule.getFirstEmptyProc()) {
+                continue;
+            }
 
-            for (BNBTask availableTask: availableTasks) {
-                //Create clones of the schedule and tasks
+            if ((fto != null) && (fto.size() == availableTasks.size() && (!fto.isEmpty()))) {
+                BNBTask task = fto.poll();
                 BNBSchedule clonedSchedule = schedule.copy();
                 HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
-                tasks.forEach((Integer integer, BNBTask task) -> clonedTasks.put(integer, task.copy()));
+                tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
                 // Schedule the task
-                scheduleTask(clonedTasks.get(availableTask._id), clonedTasks);
-                clonedSchedule.addTask(availableTask, i);
+                scheduleTask(clonedTasks.get(task._id), clonedTasks);
+                clonedSchedule.addTask(task, i);
                 // Remove the task from the unscheduled tasks
-                clonedTasks.remove(availableTask._id);
+                clonedTasks.remove(task._id);
+                dfs(clonedTasks, _bound, clonedSchedule, fto);
+            } else if (availableTasks.size() == 1) {
+                BNBTask task = availableTasks.iterator().next();
+                BNBSchedule clonedSchedule = schedule.copy();
+                HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
+                tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
+                // Schedule the task
+                scheduleTask(clonedTasks.get(task._id), clonedTasks);
+                clonedSchedule.addTask(task, i);
+                // Remove the task from the unscheduled tasks
+                clonedTasks.remove(task._id);
                 // Recursive call on new schedule
-                dfs(clonedTasks, _bound, clonedSchedule);
+                if (task._children.length == 0) {
+                    dfs(clonedTasks, _bound, clonedSchedule, null);
+                }
+                Queue<BNBTask> queue = new PriorityQueue<>((o1, o2) -> {
+                    Integer i1 = o1._commCost[task._id];
+                    Integer i2 = o2._commCost[task._id];
+                    return i1.compareTo(i2);
+                });
+                for (int j = 0; j < task._children.length; j++) {
+                    queue.add(tasks.get(task._children[j]));
+                }
+                dfs(clonedTasks, _bound, clonedSchedule, queue);
+            } else {
+                Set<BNBTask> joinFTO = new HashSet<>();
+                BNBavailableTasks.iterator().next()
+
+                for (BNBTask availableTask: availableTasks) {
+                    //Create clones of the schedule and tasks
+                    BNBSchedule clonedSchedule = schedule.copy();
+                    HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
+                    tasks.forEach((Integer integer, BNBTask task) -> clonedTasks.put(integer, task.copy()));
+                    // Schedule the task
+                    scheduleTask(clonedTasks.get(availableTask._id), clonedTasks);
+                    clonedSchedule.addTask(availableTask, i);
+                    // Remove the task from the unscheduled tasks
+                    clonedTasks.remove(availableTask._id);
+                    // Recursive call on new schedule
+                    dfs(clonedTasks, _bound, clonedSchedule, null);
+                }
             }
         }
 
     }
-
-
-//    private List<BNBTask> findFTO(Set<BNBTask> tasks) {
-//        List<BNBTask> tasksFTO = new ArrayList<>(tasks.size());
-//        Map<Integer, List<BNBTask>> Map = new HashMap<>();
-//        for (BNBTask task : tasks) {
-//
-//        }
-//    }
 
     /**
      * Notify children that its parent has been scheduled
