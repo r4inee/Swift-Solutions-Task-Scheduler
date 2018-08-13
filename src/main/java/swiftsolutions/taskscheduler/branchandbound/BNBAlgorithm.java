@@ -18,6 +18,7 @@ public class BNBAlgorithm implements Algorithm {
     private int _bound;
     private Set<BNBSchedule> _seenSchedules;
     private Map<Integer, Task> _taskMap;
+    public static long _branchCount;
 
     public BNBAlgorithm() {
         _seenSchedules = new HashSet<>();
@@ -59,9 +60,7 @@ public class BNBAlgorithm implements Algorithm {
 
         // Star the algorithm
         dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors));
-        
         return convertSchedule(_optimalSchedule);
-        
     }
 
     /**
@@ -115,6 +114,7 @@ public class BNBAlgorithm implements Algorithm {
      * @param schedule the current schedule
      */
     private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule) {
+        _branchCount++;
 
         // If the lower bound of the current schedule is larger than the upper bound, return;
         if (lowerBound(schedule) >= upperBound) {
@@ -146,6 +146,18 @@ public class BNBAlgorithm implements Algorithm {
 
         // For try schedule each available task to each schedule
         for (int i = 0; i < _numProcessors; i++) {
+//            if (i > schedule.getFirstEmptyProcessor()) {
+//                continue;
+//            } else if (i == schedule.getFirstEmptyProcessor()) {
+//                // if not fix task order
+//                schedule.incFirstEmptyProcessor();
+//                //else
+////                    if (availableTask._id > schedule.getMaxTaskID()) {
+////                          schedule.setMaxTaskID(i);
+////                    schedule.incFirstEmptyProcessor();
+////                    }
+//            }
+
             for (BNBTask availableTask: availableTasks) {
                 //Create clones of the schedule and tasks
                 BNBSchedule clonedSchedule = schedule.copy();
@@ -162,6 +174,15 @@ public class BNBAlgorithm implements Algorithm {
         }
 
     }
+
+
+//    private List<BNBTask> findFTO(Set<BNBTask> tasks) {
+//        List<BNBTask> tasksFTO = new ArrayList<>(tasks.size());
+//        Map<Integer, List<BNBTask>> Map = new HashMap<>();
+//        for (BNBTask task : tasks) {
+//
+//        }
+//    }
 
     /**
      * Notify children that its parent has been scheduled

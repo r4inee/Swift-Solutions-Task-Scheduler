@@ -19,6 +19,7 @@ public class BNBSchedule implements Serializable{
     int _numTasks;
     int[][] _schedule;
     int[] _procEndTimes;
+    int _firstEmptyProcessor;
 
     /**
      * Normal constructor
@@ -118,6 +119,22 @@ public class BNBSchedule implements Serializable{
         }
         return max;
     }
+
+    /**
+     * Get the id of the first empty processor
+     * @return time id of the first empty processor
+     */
+    public int getFirstEmptyProcessor() {
+        return _firstEmptyProcessor;
+    }
+    /**
+     * Set the id of the first empty processor
+     * @return time id of the first empty processor
+     */
+    public void incFirstEmptyProcessor() {
+        _firstEmptyProcessor++;
+    }
+
 
     /**
      * Hashcode for pruning
