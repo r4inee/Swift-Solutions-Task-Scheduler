@@ -185,6 +185,8 @@ public class BenchmarkAppRunner {
 			Algorithm algorithm = new BNBAlgorithm();
 			algorithm.setProcessors(_processors);
 			Schedule outputSchedule = algorithm.execute(_tasks);
+			outputSchedule.convertTaskID(_tasks);
+
 			return outputSchedule;
 		}
 	}

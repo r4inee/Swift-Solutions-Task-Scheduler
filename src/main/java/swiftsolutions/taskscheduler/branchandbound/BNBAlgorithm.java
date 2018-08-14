@@ -157,7 +157,7 @@ public class BNBAlgorithm implements Algorithm {
                 // Remove the task from the unscheduled tasks
                 clonedTasks.remove(task._id);
                 dfs(clonedTasks, _bound, clonedSchedule, fto, availableTasks, i);
-            } else if (availableTasks.size() == 1) {
+            } else if ((availableTasks.size() == 1) && (availableTasks.iterator().next()._children.length == tasks.size()-1)) {
                 // If all there is a single task, it is default to fork.
                 BNBTask task = availableTasks.iterator().next();
                 BNBSchedule clonedSchedule = schedule.copy();
