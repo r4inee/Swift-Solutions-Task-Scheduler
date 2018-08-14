@@ -45,6 +45,10 @@ public class Scheduler {
     private AlgorithmFactory _algorithmFactory;
     private OutputWriter _outputWriter;
 
+    private Algorithm _algorithm;
+    private Map<Integer, Task> _offsetTaskMap;
+    private long _start;
+
 
     private Scheduler() {
         _outputManager = new AppOutputManager();
@@ -69,11 +73,10 @@ public class Scheduler {
             return;
         }
 
-        Map<Integer, Task> offsetTaskMap;
         try {
-            offsetTaskMap = _inputParser.parse(_argumentParser.getFile());
+            _offsetTaskMap = _inputParser.parse(_argumentParser.getFile());
             _outputManager.send(new OutputMessage(OutputType.DEBUG,
-                    "Parsed Graph with " + offsetTaskMap.size() + " tasks"));
+                    "Parsed Graph with " + _offsetTaskMap.size() + " tasks"));
         } catch (InputException e) {
             _outputManager.send(new OutputMessage(OutputType.ERROR, e.getMessage()));
             return;
@@ -90,25 +93,34 @@ public class Scheduler {
         long start = System.currentTimeMillis();
 
         Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR, numProcessors, numCores);
+        _start = System.currentTimeMillis();
+       _algorithm = _argumentParser.getVisualizeOption().getArgs() ?
+                _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_VISUAL, numProcessors, numCores) :
+                _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND, numProcessors, numCores);
 
         if (_argumentParser.getVisualizeOption().getArgs()) {
             PlatformImpl.startup(() ->{
                 GUI gui = new GUI();
                 gui.start(new Stage());
-                gui.setOutputManager(_outputManager);
+                gui.setAlgorithm((VisualAlgorithm)_algorithm);
             });
-
-            algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_VISUAL, numProcessors, numCores);
-            ((VisualAlgorithm)algorithm).setOutputManager(_outputManager);
+        } else {
+            executeAlgorithm();
         }
+    }
 
-        Schedule outputSchedule = algorithm.execute(offsetTaskMap);
+    public void setOutputManager(OutputManager outputManager) {
+        this._outputManager = outputManager;
+    }
+
+    public void executeAlgorithm() {
+        Schedule outputSchedule = _algorithm.execute(_offsetTaskMap);
 
         long end = System.currentTimeMillis();
-        outputSchedule.convertTaskID(offsetTaskMap);
+        outputSchedule.convertTaskID(_offsetTaskMap);
 
         _outputManager.send(new OutputMessage(OutputType.SUCCESS,
-                "Successfully ran algorithm in " + (end - start) + "ms!"));
+                "Successfully ran algorithm in " + (end - _start) + "ms!"));
 
         _outputManager.send(new OutputMessage(OutputType.DEBUG,
                 "Output Graph: \n" + outputSchedule.getOutputString()));
@@ -117,19 +129,15 @@ public class Scheduler {
 
         try {
             if (_argumentParser.getOutputFile() != null) {
-                _outputWriter.serialize(_argumentParser.getOutputFile(), outputSchedule, offsetTaskMap);
+                _outputWriter.serialize(_argumentParser.getOutputFile(), outputSchedule, _offsetTaskMap);
             } else {
-                _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, offsetTaskMap);
+                _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, _offsetTaskMap);
             }
         } catch (OutputException e) {
             _outputManager.send(new OutputMessage(OutputType.DEBUG, e.getMessage()));
         }
 
         _outputManager.send(new OutputMessage(OutputType.SUCCESS, "Exiting program..."));
-    }
-
-    public void setOutputManager(OutputManager outputManager) {
-        this._outputManager = outputManager;
     }
 
 }

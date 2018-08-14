@@ -2,12 +2,8 @@ package swiftsolutions.taskscheduler.branchandbound;
 
 import swiftsolutions.interfaces.output.OutputManager;
 import swiftsolutions.interfaces.taskscheduler.VisualAlgorithm;
-import swiftsolutions.output.VisualizationMessage;
-import swiftsolutions.output.VisualizationMessageType;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
-import swiftsolutions.util.Observable;
-import swiftsolutions.util.Observer;
 import swiftsolutions.util.Pair;
 
 import java.util.*;
@@ -24,11 +20,11 @@ public class BNBAlgorithmVisual implements VisualAlgorithm {
     private Set<BNBSchedule> _seenSchedules;
     private Map<Integer, Task> _taskMap;
     private OutputManager _outputManager;
-    private boolean _start;
+    private int _branches;
 
     public BNBAlgorithmVisual() {
         _seenSchedules = new HashSet<>();
-        _start = false;
+        _branches = 0;
     }
 
     /**
@@ -123,9 +119,7 @@ public class BNBAlgorithmVisual implements VisualAlgorithm {
      */
     private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule, Queue<BNBTask> fto,
                      Set<BNBTask> free, int lastProc) {
-
-        _outputManager.sendVisual(new VisualizationMessage("", VisualizationMessageType.BRANCH_AMOUNT));
-        // If the lower bound of the current schedule is larger than the upper bound, return;
+        _branches++;
         if (lowerBound(schedule) >= upperBound) {
             return;
         }
@@ -298,22 +292,13 @@ public class BNBAlgorithmVisual implements VisualAlgorithm {
         return lowerBound;
     }
 
+
     @Override
-    public void setOutputManager(OutputManager outputManager) {
-        _outputManager = outputManager;
-        _outputManager.addVisualObserver(new Observer<VisualizationMessage>() {
-            @Override
-            public void update(Observable<? extends VisualizationMessage> observer, VisualizationMessage arg) {
-                switch (arg.getType()) {
-                    case START:
-                        _start = true;
-                        break;
-                    case STOP:
-                        _start = false;
-                        break;
-                }
-            }
-        });
+    public int getBranches() {
+        return this._branches;
     }
+
+
+
 }
 

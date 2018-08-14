@@ -2,7 +2,6 @@ package swiftsolutions.gui;
 
 import com.sun.management.OperatingSystemMXBean;
 import javafx.application.Platform;
-import javafx.beans.property.DoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -12,11 +11,8 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.text.Text;
-import swiftsolutions.interfaces.output.OutputManager;
-import swiftsolutions.output.VisualizationMessage;
-import swiftsolutions.output.VisualizationMessageType;
-import swiftsolutions.util.Observable;
-import swiftsolutions.util.Observer;
+import swiftsolutions.interfaces.taskscheduler.Algorithm;
+import swiftsolutions.interfaces.taskscheduler.VisualAlgorithm;
 
 import java.lang.management.ManagementFactory;
 import java.util.Timer;
@@ -41,7 +37,9 @@ public class GUIController {
     private long startTime;
     private long baseTime;
     private Timer timerTimer;
-    private OutputManager outputManager;
+    private Timer pollTimer;
+    private VisualAlgorithm algorithm;
+
 
 
     @FXML
@@ -51,6 +49,14 @@ public class GUIController {
         stop.setOnMouseClicked((MouseEvent event) -> stop());
         initMemoryChart();
         baseTime = 0;
+        pollTimer = new Timer();
+        pollTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                long branchCount = algorithm == null ? 0 : algorithm.getBranches();
+                Platform.runLater(() -> branches.setText(branchCount + ""));
+            }
+        }, 0 ,10);
     }
 
     private void start() {
@@ -68,7 +74,6 @@ public class GUIController {
     }
 
     private void startTimer() {
-        outputManager.sendVisual(new VisualizationMessage("", VisualizationMessageType.START));
         startTime = System.currentTimeMillis();
         timerTimer = new Timer();
         timerTimer.scheduleAtFixedRate(new TimerTask() {
@@ -79,9 +84,11 @@ public class GUIController {
                 long second = (durationInMillis / 1000) % 60;
                 long minute = (durationInMillis / (1000 * 60)) % 60;
                 long hour = (durationInMillis / (1000 * 60 * 60)) % 24;
-                Platform.runLater(() -> time.setText(String.format("%02d:%02d:%02d.%d", hour, minute, second, millis)));
+                Platform.runLater(() -> {
+                    time.setText(String.format("%02d:%02d:%02d.%d", hour, minute, second, millis));
+                });
             }
-        }, 0, 1);
+        }, 0, 10);
     }
 
     private void initMemoryChart() {
@@ -111,8 +118,7 @@ public class GUIController {
                         dataChart.get(0).getData().remove(0);
                         memoryX.setLowerBound(dataChart.get(0).getData().get(0).getXValue().doubleValue());
                     }
-                    double memory = (double)operatingSystemMXBean.getFreePhysicalMemorySize()/(double)operatingSystemMXBean.getTotalPhysicalMemorySize();
-                    double value = memory * 100;
+                    double value = operatingSystemMXBean.getSystemCpuLoad() * 100;
                     double time = (System.currentTimeMillis() - start)/1000;
                     dataChart.get(0).getData().add(new XYChart.Data<>(time, value));
                     memoryX.setUpperBound(time);
@@ -125,25 +131,10 @@ public class GUIController {
 
     }
 
-    public void setOutputManager(OutputManager outputManager) {
-        this.outputManager = outputManager;
-        this.outputManager.addVisualObserver(new Observer<VisualizationMessage>() {
-            @Override
-            public void update(Observable<? extends VisualizationMessage> observer, VisualizationMessage arg) {
-                switch (arg.getType()) {
-                    case BRANCH_AMOUNT:
-                        Platform.runLater(() -> branches.setText((Integer.parseInt(branches.getText()) + 1) + ""));
-                        break;
-                }
-            }
-        });
-
-
-        new Timer().scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                outputManager.notifyVisual();
-            }
-        }, 0, 1000);
+    public void setAlgorithm(VisualAlgorithm algorithm) {
+        this.algorithm = algorithm;
     }
+
+
+
 }
