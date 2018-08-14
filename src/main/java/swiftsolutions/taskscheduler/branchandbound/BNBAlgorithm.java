@@ -18,6 +18,7 @@ public class BNBAlgorithm implements Algorithm {
     private int _bound;
     private Set<BNBSchedule> _seenSchedules;
     private Map<Integer, Task> _taskMap;
+    private long _branchCount;
 
     public BNBAlgorithm() {
         _seenSchedules = new HashSet<>();
@@ -25,6 +26,7 @@ public class BNBAlgorithm implements Algorithm {
 
     /**
      * See Algorithm#execute()
+     *
      * @param processors
      */
     @Override
@@ -46,7 +48,7 @@ public class BNBAlgorithm implements Algorithm {
                 .collect(Collectors.toSet());
 
         // Use leaf nodes to find the bottom levels of all the tasks
-        for (Task leaf: leafs) {
+        for (Task leaf : leafs) {
             leaf.updateBottomLevel(leaf.getProcessTime());
             getBottomLevels(leaf.getParentTasks(), leaf.getProcessTime());
         }
@@ -60,6 +62,7 @@ public class BNBAlgorithm implements Algorithm {
         // Star the algorithm
         dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors), null, new HashSet<>(), -1);
 
+        System.out.println(_branchCount);
         return convertSchedule(_optimalSchedule);
     }
 
@@ -91,11 +94,12 @@ public class BNBAlgorithm implements Algorithm {
 
     /**
      * Recursive function to get bottom levels
-     * @param nodes nodes where all the children nodes bottom levels have already been calculated
+     *
+     * @param nodes           nodes where all the children nodes bottom levels have already been calculated
      * @param currBottomLevel the current path length
      */
     private void getBottomLevels(Set<Integer> nodes, int currBottomLevel) {
-        for (Integer node: nodes) {
+        for (Integer node : nodes) {
             // Update current nodes bottom level
             _taskMap.get(node).updateBottomLevel(currBottomLevel + _taskMap.get(node).getProcessTime());
 
@@ -109,12 +113,14 @@ public class BNBAlgorithm implements Algorithm {
 
     /**
      * Recursive depth-first search branch and bound algorithm.
-     * @param tasks tasks that have not been scheduled
+     *
+     * @param tasks      tasks that have not been scheduled
      * @param upperBound the current best schedule founds cost function
-     * @param schedule the current schedule
+     * @param schedule   the current schedule
      */
     private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule, Queue<BNBTask> fto,
                      Set<BNBTask> free, int lastProc) {
+        _branchCount++;
         // If the lower bound of the current schedule is larger than the upper bound, return;
         if (lowerBound(schedule) >= upperBound) {
             return;
@@ -143,11 +149,10 @@ public class BNBAlgorithm implements Algorithm {
                 .filter((BNBTask task) -> task._numDependency == 0)
                 .collect(Collectors.toSet());
 
-        // For try schedule each available task to each schedule
-        for (int i = 0; i < _numProcessors; i++) {
-            if ((fto != null) && (fto.size() == availableTasks.size() && (!fto.isEmpty()))) {
-                // When the schedule is in FTO automatically poll for the next task in the queue and schedule it.
-                BNBTask task = fto.poll();
+        if ((fto != null) && (fto.size() == availableTasks.size() && (!fto.isEmpty()))) {
+            // When the schedule is in FTO automatically poll for the next task in the queue and schedule it.
+            BNBTask task = fto.poll();
+            for (int i = 0; i < _numProcessors; i++) {
                 BNBSchedule clonedSchedule = schedule.copy();
                 HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
                 tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
@@ -157,103 +162,217 @@ public class BNBAlgorithm implements Algorithm {
                 // Remove the task from the unscheduled tasks
                 clonedTasks.remove(task._id);
                 dfs(clonedTasks, _bound, clonedSchedule, fto, availableTasks, i);
-            } else if ((availableTasks.size() == 1) && (availableTasks.iterator().next()._children.length == tasks.size()-1)) {
-                // If all there is a single task, it is default to fork.
-                BNBTask task = availableTasks.iterator().next();
-                BNBSchedule clonedSchedule = schedule.copy();
-                HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
-                tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
-                // Schedule the task
-                scheduleTask(clonedTasks.get(task._id), clonedTasks);
-                clonedSchedule.addTask(task, i);
-                // Remove the task from the unscheduled tasks
-                clonedTasks.remove(task._id);
-                // Recursive call on new schedule
-                if (task._children.length == 0) {
-                    dfs(clonedTasks, _bound, clonedSchedule, null, availableTasks, i);
-                    return;
+            }
+            return;
+        } else if ((fto != null) && (fto.size() != availableTasks.size() && (!fto.isEmpty()))) {
+            return;
+        } else if (isFTO(availableTasks, schedule)) {
+            Queue<BNBTask> queue = null;
+            Comparator<BNBTask> c = (o1, o2) -> {
+                Integer parentO1DRT = 0;
+                Integer parentO2DRT = 0;
+                if (o1._parents.length == 1) {
+                    int parent = o1._parents[0];
+                    parentO1DRT = schedule._schedule[parent][1] + o1._commCost[parent];
                 }
-                // The queue is ordered in increasing outgoing edge weight.
-                Queue<BNBTask> queue = new PriorityQueue<>((o1, o2) -> {
-                    Integer i1 = o1._commCost[task._id];
-                    Integer i2 = o2._commCost[task._id];
-                    return i1.compareTo(i2);
-                });
-                for (int j = 0; j < task._children.length; j++) {
-                    queue.add(tasks.get(task._children[j]));
-                }
-                dfs(clonedTasks, _bound, clonedSchedule, queue, availableTasks, i);
-                return;
-            } else {
-                // Check if it is a joinFTO by checking if every available task share common children.
-                Set<Integer> constrainedTask = new HashSet<>();
-                BNBTask firstAvailable = availableTasks.iterator().next();
-                for (int j = 0; j < firstAvailable._children.length; j++) {
-                    constrainedTask.add(firstAvailable._children[j]);
-                }
-                for (BNBTask t : availableTasks) {
-                    Set<Integer> foundTask = new HashSet<>();
-                    for (int j = 0; j < t._children.length; j++) {
-                        foundTask.add(t._children[j]);
-                    }
-                    constrainedTask.retainAll(foundTask);
+                if (o2._parents.length == 1) {
+                    int parent = o2._parents[0];
+                    parentO2DRT = schedule._schedule[parent][1] + o2._commCost[parent];
                 }
 
-                // If this if statement is true, then it is a joinFTO
-                if (constrainedTask.size() > 0) {
-                    Set<BNBTask> children = new HashSet<>();
-                    for (Integer id : constrainedTask) {
-                        children.add(tasks.get(id));
+                if (parentO1DRT.intValue() == parentO2DRT.intValue()) {
+                    Integer outO1 = 0;
+                    Integer outO2 = 0;
+                    if (o1._children.length == 1) {
+                        outO1 = tasks.get(o1._children[0])._commCost[o1._id];
                     }
-                    // The queue is ordered in decreasing outgoing edge weight.
-                    Queue<BNBTask> queue = new PriorityQueue<>((o1, o2) -> {
-                        Integer i1 = 0;
-                        Integer i2 = 0;
-                        for (BNBTask c : children) {
-                            i1 += c._commCost[o1._id];
-                            i2 += c._commCost[o2._id];
+                    if (o2._children.length == 1) {
+                        outO2 = tasks.get(o2._children[0])._commCost[o2._id];
+                    }
+
+                    return outO2.compareTo(outO1);
+                }
+
+                return parentO1DRT.compareTo(parentO2DRT);
+            };
+            queue = new PriorityQueue<>(availableTasks.size(), c);
+            queue.addAll(availableTasks);
+            if (queue.size() > 1) {
+                List<BNBTask> ftoTask = new ArrayList<>();
+                boolean order = true;
+                for (int j = 0; j < queue.size(); j++) {
+                    ftoTask.add(queue.poll());
+                    if (ftoTask.size() > 1) {
+                        BNBTask o1 = ftoTask.get(j - 1);
+                        BNBTask o2 = ftoTask.get(j);
+
+                        int outO1 = 0;
+                        int outO2 = 0;
+                        if (o1._children.length == 1) {
+                            outO1 = tasks.get(o1._children[0])._commCost[o1._id];
                         }
-                        return i2.compareTo(i1);
-                    });
-                    queue.addAll(availableTasks);
-                    // Schedule th next task for FTO
-                    BNBTask scheduleTask = queue.poll();
+                        if (o2._children.length == 1) {
+                            outO2 = tasks.get(o2._children[0])._commCost[o2._id];
+                        }
+
+                        if (outO2 < outO1) {
+                            order = false;
+                            break;
+                        }
+                    }
+                }
+                if (order) {
+                    fto = new PriorityQueue<>(availableTasks.size(), c);
+                    fto.addAll(availableTasks);
                     BNBSchedule clonedSchedule = schedule.copy();
                     HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
                     tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
-                    // Schedule the task
-                    scheduleTask(clonedTasks.get(scheduleTask._id), clonedTasks);
-                    clonedSchedule.addTask(scheduleTask, i);
-                    // Remove the task from the unscheduled tasks
-                    clonedTasks.remove(scheduleTask._id);
-                    dfs(clonedTasks, _bound, clonedSchedule, queue, availableTasks, i);
-                } else {
-                    // Processor normalisation
-                    if (i > schedule.getFirstEmptyProc()) {
-                        break;
-                    }
-                    for (BNBTask availableTask : availableTasks) {
-                        // Partial Duplicate Avoidance
-                        if (!free.contains(availableTask)) {
-                            if (i < lastProc) {
-                                continue;
-                            }
-                        }
-                        // Create clones of the schedule and tasks
-                        BNBSchedule clonedSchedule = schedule.copy();
-                        HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
-                        tasks.forEach((Integer integer, BNBTask task) -> clonedTasks.put(integer, task.copy()));
-                        // Schedule the task
-                        scheduleTask(clonedTasks.get(availableTask._id), clonedTasks);
-                        clonedSchedule.addTask(availableTask, i);
-                        // Remove the task from the unscheduled tasks
-                        clonedTasks.remove(availableTask._id);
-                        // Recursive call on new schedule
-                        dfs(clonedTasks, _bound, clonedSchedule, null, availableTasks, i);
-                    }
+                    _branchCount--;
+                    dfs(clonedTasks, _bound, clonedSchedule, fto, availableTasks, -1);
                 }
             }
         }
+
+        // For try schedule each available task to each schedule
+
+        for (BNBTask availableTask : availableTasks) {
+            for (int i = 0; i < _numProcessors; i++) {
+                // Processor normalisation
+                if (i > schedule.getFirstEmptyProc()) {
+                    return;
+                }
+                // Partial Duplicate Avoidance
+                if (!free.contains(availableTask)) {
+                    if (i < lastProc) {
+                        break;
+                    }
+                }
+                // Create clones of the schedule and tasks
+                BNBSchedule clonedSchedule = schedule.copy();
+                HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
+                tasks.forEach((Integer integer, BNBTask task) -> clonedTasks.put(integer, task.copy()));
+                // Schedule the task
+                scheduleTask(clonedTasks.get(availableTask._id), clonedTasks);
+                clonedSchedule.addTask(availableTask, i);
+                // Remove the task from the unscheduled tasks
+                clonedTasks.remove(availableTask._id);
+                // Recursive call on new schedule
+                dfs(clonedTasks, _bound, clonedSchedule, null, availableTasks, i);
+
+
+            }
+        }
+
+//            } else if ((availableTasks.size() == 1) && (availableTasks.iterator().next()._children.length == tasks.size() - 1)) {
+//                // If all there is a single task, it is default to fork.
+//                BNBTask task = availableTasks.iterator().next();
+//                BNBSchedule clonedSchedule = schedule.copy();
+//                HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
+//                tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
+//                // Schedule the task
+//                scheduleTask(clonedTasks.get(task._id), clonedTasks);
+//                clonedSchedule.addTask(task, i);
+//                // Remove the task from the unscheduled tasks
+//                clonedTasks.remove(task._id);
+//                // Recursive call on new schedule
+//                if (task._children.length == 0) {
+//                    dfs(clonedTasks, _bound, clonedSchedule, null, availableTasks, i);
+//                    return;
+//                }
+//                // The queue is ordered in increasing outgoing edge weight.
+//                Queue<BNBTask> queue = new PriorityQueue<>((o1, o2) -> {
+//                    Integer i1 = o1._commCost[task._id];
+//                    Integer i2 = o2._commCost[task._id];
+//                    return i1.compareTo(i2);
+//                });
+//                for (int j = 0; j < task._children.length; j++) {
+//                    queue.add(tasks.get(task._children[j]));
+//                }
+//                dfs(clonedTasks, _bound, clonedSchedule, queue, availableTasks, i);
+//                return;
+//            } else {
+//                // Check if it is a joinFTO by checking if every available task share common children.
+//                Set<Integer> constrainedTask = new HashSet<>();
+//                BNBTask firstAvailable = availableTasks.iterator().next();
+//                for (int j = 0; j < firstAvailable._children.length; j++) {
+//                    constrainedTask.add(firstAvailable._children[j]);
+//                }
+//                for (BNBTask t : availableTasks) {
+//                    Set<Integer> foundTask = new HashSet<>();
+//                    for (int j = 0; j < t._children.length; j++) {
+//                        foundTask.add(t._children[j]);
+//                    }
+//                    constrainedTask.retainAll(foundTask);
+//                }
+//
+//                // If this if statement is true, then it is a joinFTO
+//                if (constrainedTask.size() == 1) {
+//                    BNBTask childTask = tasks.get(constrainedTask.iterator().next());
+//                    // The queue is ordered in decreasing outgoing edge weight.
+//                    Queue<BNBTask> queue = new PriorityQueue<>((o1, o2) -> {
+//                        Integer i1 = childTask._commCost[o1._id];
+//                        Integer i2 = childTask._commCost[o2._id];
+//                        return i2.compareTo(i1);
+//                    });
+//                    queue.addAll(availableTasks);
+//                    // Schedule th next task for FTO
+//                    BNBTask scheduleTask = queue.poll();
+//                    BNBSchedule clonedSchedule = schedule.copy();
+//                    HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
+//                    tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
+//                    // Schedule the task
+//                    scheduleTask(clonedTasks.get(scheduleTask._id), clonedTasks);
+//                    clonedSchedule.addTask(scheduleTask, i);
+//                    // Remove the task from the unscheduled tasks
+//                    clonedTasks.remove(scheduleTask._id);
+//                    dfs(clonedTasks, _bound, clonedSchedule, queue, availableTasks, i);
+//                    return;
+//                }
+//           }
+//      }
+    }
+
+
+    private boolean isFTO(Set<BNBTask> availableTasks, BNBSchedule schedule) {
+        for (BNBTask availableTask : availableTasks) {
+            if ((availableTask._parents.length <= 1) && (availableTask._children.length <= 1)) {
+                if ((availableTask._parents.length == 0) && (availableTask._children.length == 0)) {
+                    continue;
+                }
+
+                if (availableTask._children.length == 1) {
+                    for (BNBTask a : availableTasks) {
+                        if (a._children.length == 1) {
+                            if (!(a._children[0] == availableTask._children[0])) {
+                                return false;
+                            }
+                        } else if (a._children.length > 1) {
+                            return false;
+                        }
+                    }
+                }
+
+                if (availableTask._parents.length == 1) {
+                    int proc = -1;
+                    for (BNBTask a : availableTasks) {
+                        if (a._parents.length == 1) {
+                            if (proc == -1) {
+                                proc = schedule._schedule[a._id][2];
+                            } else {
+                                if (!(proc == schedule._schedule[a._id][2])) {
+                                    return false;
+                                }
+                            }
+                        } else if (a._parents.length > 1) {
+                            return false;
+                        }
+                    }
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
