@@ -66,11 +66,11 @@ public class Scheduler {
             return;
         }
 
-        Map<Integer, Task> tasks;
+        Map<Integer, Task> offsetTaskMap;
         try {
-            tasks = _inputParser.parse(_argumentParser.getFile());
+            offsetTaskMap = _inputParser.parse(_argumentParser.getFile());
             _outputManager.send(new OutputMessage(OutputType.DEBUG,
-                    "Parsed Graph with " + tasks.size() + " tasks"));
+                    "Parsed Graph with " + offsetTaskMap.size() + " tasks"));
         } catch (InputException e) {
             _outputManager.send(new OutputMessage(OutputType.ERROR, e.getMessage()));
             return;
@@ -86,11 +86,10 @@ public class Scheduler {
 
         long start = System.currentTimeMillis();
         Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND, numProcessors, numCores);
-        Schedule outputSchedule = algorithm.execute(tasks);
+        Schedule outputSchedule = algorithm.execute(offsetTaskMap);
 
         long end = System.currentTimeMillis();
-        outputSchedule.convertTaskID(tasks);
-        Map<Integer, Task> taskMap = convertTaskID(tasks);
+        outputSchedule.convertTaskID(offsetTaskMap);
 
         _outputManager.send(new OutputMessage(OutputType.SUCCESS,
                 "Successfully ran algorithm in " + (end - start) + "ms!"));
@@ -102,9 +101,9 @@ public class Scheduler {
 
         try {
             if (_argumentParser.getOutputFile() != null) {
-                _outputWriter.serialize(_argumentParser.getOutputFile(), outputSchedule, taskMap);
+                _outputWriter.serialize(_argumentParser.getOutputFile(), outputSchedule, offsetTaskMap);
             } else {
-                _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, taskMap);
+                _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, offsetTaskMap);
             }
         } catch (OutputException e) {
             _outputManager.send(new OutputMessage(OutputType.DEBUG, e.getMessage()));
@@ -117,11 +116,4 @@ public class Scheduler {
         this._outputManager = outputManager;
     }
 
-    private Map<Integer, Task> convertTaskID(Map<Integer, Task> tasks) {
-        Map<Integer, Task> newTaskMap = new HashMap<>();
-        for (Integer offsetID : tasks.keySet()) {
-            newTaskMap.put(tasks.get(offsetID).getTaskID(), tasks.get(offsetID));
-        }
-        return newTaskMap;
-    }
 }

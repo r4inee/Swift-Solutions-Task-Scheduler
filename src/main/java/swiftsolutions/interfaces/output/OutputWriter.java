@@ -7,5 +7,5 @@ import swiftsolutions.taskscheduler.Task;
 import java.util.Map;
 
 public interface OutputWriter {
-    public void serialize(String file, Schedule schedule, Map<Integer, Task> taskMap) throws OutputException;
+    public void serialize(String file, Schedule schedule, Map<Integer, Task> offsetTaskMap) throws OutputException;
 }

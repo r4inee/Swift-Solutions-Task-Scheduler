@@ -80,4 +80,5 @@ graph-utils/log1.txt
 graph-utils/log2.txt
 graph-utils/output_mode1/
 graph-utils/output_mode2/
+src/test/resources/test_graphs_full_name/
 *-output.dot
