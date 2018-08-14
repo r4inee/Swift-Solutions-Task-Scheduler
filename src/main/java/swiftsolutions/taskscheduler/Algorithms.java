@@ -3,13 +3,15 @@ package swiftsolutions.taskscheduler;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithm;
 import swiftsolutions.taskscheduler.brandandboundastar.BBAAlgorithm;
+import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithmVisual;
 
 /**
  * Enum of algorithms that we may want to use for scheduling
  */
 public enum Algorithms {
     BRANCH_AND_BOUND(new BNBAlgorithm(), "bnb-simple", false),
-    BRANCH_AND_BOUND_A_STAR(new BBAAlgorithm(), "bba-simple", false);
+    BRANCH_AND_BOUND_A_STAR(new BBAAlgorithm(), "bba-simple", false),
+    BRANCH_AND_BOUND_VISUAL(new BNBAlgorithmVisual(), "bnb-visual", false);
 
     private Algorithm _algorithm;
     private String _flag;

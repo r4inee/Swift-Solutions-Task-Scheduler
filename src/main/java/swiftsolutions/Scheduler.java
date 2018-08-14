@@ -1,8 +1,11 @@
 package swiftsolutions;
 
+import com.sun.javafx.application.PlatformImpl;
+import javafx.stage.Stage;
 import swiftsolutions.exceptions.ArgumentFormatException;
 import swiftsolutions.exceptions.InputException;
 import swiftsolutions.exceptions.OutputException;
+import swiftsolutions.gui.GUI;
 import swiftsolutions.input.DOTInputParser;
 import swiftsolutions.interfaces.input.ArgumentParser;
 import swiftsolutions.interfaces.input.InputParser;
@@ -10,6 +13,7 @@ import swiftsolutions.interfaces.output.OutputManager;
 import swiftsolutions.interfaces.output.OutputWriter;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.interfaces.taskscheduler.AlgorithmFactory;
+import swiftsolutions.interfaces.taskscheduler.VisualAlgorithm;
 import swiftsolutions.output.AppOutputManager;
 import swiftsolutions.output.DOTOutputWriter;
 import swiftsolutions.output.OutputMessage;
@@ -17,7 +21,6 @@ import swiftsolutions.output.OutputType;
 import swiftsolutions.cli.CLIArgumentParser;
 import swiftsolutions.taskscheduler.*;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -85,7 +88,20 @@ public class Scheduler {
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Executing algorithm..."));
 
         long start = System.currentTimeMillis();
+
         Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR, numProcessors, numCores);
+
+        if (_argumentParser.getVisualizeOption().getArgs()) {
+            PlatformImpl.startup(() ->{
+                GUI gui = new GUI();
+                gui.start(new Stage());
+                gui.setOutputManager(_outputManager);
+            });
+
+            algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_VISUAL, numProcessors, numCores);
+            ((VisualAlgorithm)algorithm).setOutputManager(_outputManager);
+        }
+
         Schedule outputSchedule = algorithm.execute(offsetTaskMap);
 
         long end = System.currentTimeMillis();
