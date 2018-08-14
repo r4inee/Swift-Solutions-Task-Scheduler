@@ -59,7 +59,7 @@ public class BNBAlgorithm implements Algorithm {
         _bound = Integer.MAX_VALUE;
 
         // Star the algorithm
-        dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors), null);
+        dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors), null, new HashSet<>(), -1);
 
         System.out.println(_branchCount);
         return convertSchedule(_optimalSchedule);
@@ -115,7 +115,8 @@ public class BNBAlgorithm implements Algorithm {
      * @param upperBound the current best schedule founds cost function
      * @param schedule the current schedule
      */
-    private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule, Queue<BNBTask> fto) {
+    private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule, Queue<BNBTask> fto,
+                     Set<BNBTask> free, int lastProc) {
         _branchCount++;
 
         // If the lower bound of the current schedule is larger than the upper bound, return;
@@ -124,11 +125,11 @@ public class BNBAlgorithm implements Algorithm {
         }
 
         // If we've seen a similar schedule return, if not add it.
-//        if (_seenSchedules.contains(schedule)) {
-//            return;
-//        } else {
-//            _seenSchedules.add(schedule);
-//        }
+        if (_seenSchedules.contains(schedule)) {
+            return;
+        } else {
+            _seenSchedules.add(schedule);
+        }
 
         // If we've finished then we update the optimal schedule and bound if the new schedule is better.
         if (tasks.isEmpty()) {
@@ -148,10 +149,6 @@ public class BNBAlgorithm implements Algorithm {
 
         // For try schedule each available task to each schedule
         for (int i = 0; i < _numProcessors; i++) {
-            if (i > schedule.getFirstEmptyProc()) {
-                continue;
-            }
-
             if ((fto != null) && (fto.size() == availableTasks.size() && (!fto.isEmpty()))) {
                 BNBTask task = fto.poll();
                 BNBSchedule clonedSchedule = schedule.copy();
@@ -162,7 +159,7 @@ public class BNBAlgorithm implements Algorithm {
                 clonedSchedule.addTask(task, i);
                 // Remove the task from the unscheduled tasks
                 clonedTasks.remove(task._id);
-                dfs(clonedTasks, _bound, clonedSchedule, fto);
+                dfs(clonedTasks, _bound, clonedSchedule, fto, availableTasks, i);
             } else if (availableTasks.size() == 1) {
                 BNBTask task = availableTasks.iterator().next();
                 BNBSchedule clonedSchedule = schedule.copy();
@@ -175,7 +172,7 @@ public class BNBAlgorithm implements Algorithm {
                 clonedTasks.remove(task._id);
                 // Recursive call on new schedule
                 if (task._children.length == 0) {
-                    dfs(clonedTasks, _bound, clonedSchedule, null);
+                    dfs(clonedTasks, _bound, clonedSchedule, null, availableTasks, i);
                     return;
                 }
                 Queue<BNBTask> queue = new PriorityQueue<>((o1, o2) -> {
@@ -186,7 +183,8 @@ public class BNBAlgorithm implements Algorithm {
                 for (int j = 0; j < task._children.length; j++) {
                     queue.add(tasks.get(task._children[j]));
                 }
-                dfs(clonedTasks, _bound, clonedSchedule, queue);
+                dfs(clonedTasks, _bound, clonedSchedule, queue, availableTasks, i);
+                return;
             } else {
                 Set<Integer> constrainedTask = new HashSet<>();
                 BNBTask firstAvailable = availableTasks.iterator().next();
@@ -226,9 +224,17 @@ public class BNBAlgorithm implements Algorithm {
                     clonedSchedule.addTask(scheduleTask, i);
                     // Remove the task from the unscheduled tasks
                     clonedTasks.remove(scheduleTask._id);
-                    dfs(clonedTasks, _bound, clonedSchedule, queue);
+                    dfs(clonedTasks, _bound, clonedSchedule, queue, availableTasks, i);
                 } else {
+                    if (i > schedule.getFirstEmptyProc()) {
+                        break;
+                    }
                     for (BNBTask availableTask : availableTasks) {
+                        if (!free.contains(availableTask)) {
+                            if (i < lastProc) {
+                                continue;
+                            }
+                        }
                         //Create clones of the schedule and tasks
                         BNBSchedule clonedSchedule = schedule.copy();
                         HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
@@ -239,7 +245,7 @@ public class BNBAlgorithm implements Algorithm {
                         // Remove the task from the unscheduled tasks
                         clonedTasks.remove(availableTask._id);
                         // Recursive call on new schedule
-                        dfs(clonedTasks, _bound, clonedSchedule, null);
+                        dfs(clonedTasks, _bound, clonedSchedule, null, availableTasks, i);
                     }
                 }
             }
