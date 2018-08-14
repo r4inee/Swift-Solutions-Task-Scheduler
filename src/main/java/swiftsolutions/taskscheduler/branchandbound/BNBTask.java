@@ -86,9 +86,6 @@ public class BNBTask implements Serializable{
         if (highestParentId >= 0) {
             _commCost = new int[highestParentId + 1];
             commCosts.forEach((Integer parent, Integer cost) -> _commCost[parent] = cost);
-        } else {
-            _commCost = new int[highestParentId + 1];
-            commCosts.forEach((Integer parent, Integer cost) -> _commCost[parent] = 0);
         }
     }
 
