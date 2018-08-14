@@ -18,7 +18,6 @@ public class BNBAlgorithm implements Algorithm {
     private int _bound;
     private Set<BNBSchedule> _seenSchedules;
     private Map<Integer, Task> _taskMap;
-    public static long _branchCount;
 
     public BNBAlgorithm() {
         _seenSchedules = new HashSet<>();
@@ -61,7 +60,6 @@ public class BNBAlgorithm implements Algorithm {
         // Star the algorithm
         dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors), null, new HashSet<>(), -1);
 
-        System.out.println(_branchCount);
         return convertSchedule(_optimalSchedule);
     }
 
@@ -117,8 +115,6 @@ public class BNBAlgorithm implements Algorithm {
      */
     private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule, Queue<BNBTask> fto,
                      Set<BNBTask> free, int lastProc) {
-        _branchCount++;
-
         // If the lower bound of the current schedule is larger than the upper bound, return;
         if (lowerBound(schedule) >= upperBound) {
             return;
@@ -150,6 +146,7 @@ public class BNBAlgorithm implements Algorithm {
         // For try schedule each available task to each schedule
         for (int i = 0; i < _numProcessors; i++) {
             if ((fto != null) && (fto.size() == availableTasks.size() && (!fto.isEmpty()))) {
+                // When the schedule is in FTO automatically poll for the next task in the queue and schedule it.
                 BNBTask task = fto.poll();
                 BNBSchedule clonedSchedule = schedule.copy();
                 HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
@@ -161,6 +158,7 @@ public class BNBAlgorithm implements Algorithm {
                 clonedTasks.remove(task._id);
                 dfs(clonedTasks, _bound, clonedSchedule, fto, availableTasks, i);
             } else if (availableTasks.size() == 1) {
+                // If all there is a single task, it is default to fork.
                 BNBTask task = availableTasks.iterator().next();
                 BNBSchedule clonedSchedule = schedule.copy();
                 HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
@@ -175,6 +173,7 @@ public class BNBAlgorithm implements Algorithm {
                     dfs(clonedTasks, _bound, clonedSchedule, null, availableTasks, i);
                     return;
                 }
+                // The queue is ordered in increasing outgoing edge weight.
                 Queue<BNBTask> queue = new PriorityQueue<>((o1, o2) -> {
                     Integer i1 = o1._commCost[task._id];
                     Integer i2 = o2._commCost[task._id];
@@ -186,6 +185,7 @@ public class BNBAlgorithm implements Algorithm {
                 dfs(clonedTasks, _bound, clonedSchedule, queue, availableTasks, i);
                 return;
             } else {
+                // Check if it is a joinFTO by checking if every available task share common children.
                 Set<Integer> constrainedTask = new HashSet<>();
                 BNBTask firstAvailable = availableTasks.iterator().next();
                 for (int j = 0; j < firstAvailable._children.length; j++) {
@@ -199,12 +199,13 @@ public class BNBAlgorithm implements Algorithm {
                     constrainedTask.retainAll(foundTask);
                 }
 
-
+                // If this if statement is true, then it is a joinFTO
                 if (constrainedTask.size() > 0) {
                     Set<BNBTask> children = new HashSet<>();
                     for (Integer id : constrainedTask) {
                         children.add(tasks.get(id));
                     }
+                    // The queue is ordered in decreasing outgoing edge weight.
                     Queue<BNBTask> queue = new PriorityQueue<>((o1, o2) -> {
                         Integer i1 = 0;
                         Integer i2 = 0;
@@ -215,6 +216,7 @@ public class BNBAlgorithm implements Algorithm {
                         return i2.compareTo(i1);
                     });
                     queue.addAll(availableTasks);
+                    // Schedule th next task for FTO
                     BNBTask scheduleTask = queue.poll();
                     BNBSchedule clonedSchedule = schedule.copy();
                     HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
@@ -226,16 +228,18 @@ public class BNBAlgorithm implements Algorithm {
                     clonedTasks.remove(scheduleTask._id);
                     dfs(clonedTasks, _bound, clonedSchedule, queue, availableTasks, i);
                 } else {
+                    // Processor normalisation
                     if (i > schedule.getFirstEmptyProc()) {
                         break;
                     }
                     for (BNBTask availableTask : availableTasks) {
+                        // Partial Duplicate Avoidance
                         if (!free.contains(availableTask)) {
                             if (i < lastProc) {
                                 continue;
                             }
                         }
-                        //Create clones of the schedule and tasks
+                        // Create clones of the schedule and tasks
                         BNBSchedule clonedSchedule = schedule.copy();
                         HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
                         tasks.forEach((Integer integer, BNBTask task) -> clonedTasks.put(integer, task.copy()));
@@ -251,6 +255,7 @@ public class BNBAlgorithm implements Algorithm {
             }
         }
     }
+
     /**
      * Notify children that its parent has been scheduled
      * @param task task being scheduled
