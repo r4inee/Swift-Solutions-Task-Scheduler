@@ -5,15 +5,16 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import swiftsolutions.interfaces.output.OutputManager;
+import swiftsolutions.interfaces.taskscheduler.ParallelAlgorithm;
+import swiftsolutions.interfaces.taskscheduler.VisualAlgorithm;
 
 
 public class GUI extends Application {
 
     private GUIController _guiController;
 
-    public void setOutputManager(OutputManager outputManager) {
-        _guiController.setOutputManager(outputManager);
+    public void setAlgorithm(VisualAlgorithm algorithm) {
+        _guiController.setAlgorithm(algorithm);
     }
 
     @Override
