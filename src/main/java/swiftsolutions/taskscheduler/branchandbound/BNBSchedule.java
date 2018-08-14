@@ -35,6 +35,9 @@ public class BNBSchedule {
             for (int j = 0; j < _schedule[0].length; j++) {
                 _schedule[i][j] = _schedule[i][j] = EMPTY;
             }
+        }
+
+        for (int i = 0; i < numProc; i++) {
             _firstTask[i] = EMPTY;
         }
 
@@ -64,7 +67,8 @@ public class BNBSchedule {
             }
         }
 
-        return new BNBSchedule(_numTasks, scheduleCopy, Arrays.copyOf(_procEndTimes, _procEndTimes.length), _firstTask);
+        return new BNBSchedule(_numTasks, scheduleCopy, Arrays.copyOf(_procEndTimes, _procEndTimes.length),
+                Arrays.copyOf(_firstTask, _firstTask.length));
     }
 
     /**
