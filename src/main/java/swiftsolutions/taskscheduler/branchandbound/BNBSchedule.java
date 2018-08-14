@@ -99,7 +99,7 @@ public class BNBSchedule {
             taskStart = offset;
         }
 
-        if (_firstTask[proc] == -1) {
+        if (_firstTask[proc] == EMPTY) {
             _firstTask[proc] = task._id;
         }
 

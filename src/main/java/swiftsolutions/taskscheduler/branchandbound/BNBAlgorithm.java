@@ -135,7 +135,7 @@ public class BNBAlgorithm implements Algorithm {
             long candidateUpperBound = schedule.getCost();
             if (candidateUpperBound <= upperBound) {
                 _optimalSchedule = schedule;
-                _bound = (int)candidateUpperBound;
+                _bound = (int) candidateUpperBound;
             }
             return;
         }
@@ -176,6 +176,7 @@ public class BNBAlgorithm implements Algorithm {
                 // Recursive call on new schedule
                 if (task._children.length == 0) {
                     dfs(clonedTasks, _bound, clonedSchedule, null);
+                    return;
                 }
                 Queue<BNBTask> queue = new PriorityQueue<>((o1, o2) -> {
                     Integer i1 = o1._commCost[task._id];
@@ -187,27 +188,63 @@ public class BNBAlgorithm implements Algorithm {
                 }
                 dfs(clonedTasks, _bound, clonedSchedule, queue);
             } else {
-                Set<BNBTask> joinFTO = new HashSet<>();
-                BNBavailableTasks.iterator().next()
+                Set<Integer> constrainedTask = new HashSet<>();
+                BNBTask firstAvailable = availableTasks.iterator().next();
+                for (int j = 0; j < firstAvailable._children.length; j++) {
+                    constrainedTask.add(firstAvailable._children[j]);
+                }
+                for (BNBTask t : availableTasks) {
+                    Set<Integer> foundTask = new HashSet<>();
+                    for (int j = 0; j < t._children.length; j++) {
+                        foundTask.add(t._children[j]);
+                    }
+                    constrainedTask.retainAll(foundTask);
+                }
 
-                for (BNBTask availableTask: availableTasks) {
-                    //Create clones of the schedule and tasks
+
+                if (constrainedTask.size() > 0) {
+                    Set<BNBTask> children = new HashSet<>();
+                    for (Integer id : constrainedTask) {
+                        children.add(tasks.get(id));
+                    }
+                    Queue<BNBTask> queue = new PriorityQueue<>((o1, o2) -> {
+                        Integer i1 = 0;
+                        Integer i2 = 0;
+                        for (BNBTask c : children) {
+                            i1 += c._commCost[o1._id];
+                            i2 += c._commCost[o2._id];
+                        }
+                        return i2.compareTo(i1);
+                    });
+                    queue.addAll(availableTasks);
+                    BNBTask scheduleTask = queue.poll();
                     BNBSchedule clonedSchedule = schedule.copy();
                     HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
-                    tasks.forEach((Integer integer, BNBTask task) -> clonedTasks.put(integer, task.copy()));
+                    tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
                     // Schedule the task
-                    scheduleTask(clonedTasks.get(availableTask._id), clonedTasks);
-                    clonedSchedule.addTask(availableTask, i);
+                    scheduleTask(clonedTasks.get(scheduleTask._id), clonedTasks);
+                    clonedSchedule.addTask(scheduleTask, i);
                     // Remove the task from the unscheduled tasks
-                    clonedTasks.remove(availableTask._id);
-                    // Recursive call on new schedule
-                    dfs(clonedTasks, _bound, clonedSchedule, null);
+                    clonedTasks.remove(scheduleTask._id);
+                    dfs(clonedTasks, _bound, clonedSchedule, queue);
+                } else {
+                    for (BNBTask availableTask : availableTasks) {
+                        //Create clones of the schedule and tasks
+                        BNBSchedule clonedSchedule = schedule.copy();
+                        HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
+                        tasks.forEach((Integer integer, BNBTask task) -> clonedTasks.put(integer, task.copy()));
+                        // Schedule the task
+                        scheduleTask(clonedTasks.get(availableTask._id), clonedTasks);
+                        clonedSchedule.addTask(availableTask, i);
+                        // Remove the task from the unscheduled tasks
+                        clonedTasks.remove(availableTask._id);
+                        // Recursive call on new schedule
+                        dfs(clonedTasks, _bound, clonedSchedule, null);
+                    }
                 }
             }
         }
-
     }
-
     /**
      * Notify children that its parent has been scheduled
      * @param task task being scheduled
