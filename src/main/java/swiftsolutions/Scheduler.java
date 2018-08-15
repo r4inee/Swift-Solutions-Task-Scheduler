@@ -102,8 +102,10 @@ public class Scheduler {
             PlatformImpl.startup(() ->{
                 GUI gui = new GUI();
                 Stage stage = new Stage();
-                stage.setTitle("Scheduling: " + _argumentParser.getFile());
+                String[] fileSplit = _argumentParser.getFile().split("\\\\");
+                stage.setTitle("Running on input graph " + fileSplit[fileSplit.length - 1] + " with " + _argumentParser.getProcessors() + " processors");
                 gui.start(stage);
+                gui.setTaskMap(_offsetTaskMap);
                 _algorithm.execute(_offsetTaskMap);
                 gui.setAlgorithmThread((VisualAlgorithm) _algorithm);
                 gui.setScheduler(this);
