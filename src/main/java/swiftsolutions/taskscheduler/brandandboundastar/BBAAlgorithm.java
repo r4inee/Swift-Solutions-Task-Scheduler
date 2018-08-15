@@ -100,7 +100,7 @@ public class BBAAlgorithm implements Algorithm{
 				for (int j = 0; j < _numProcessors; j++) { //add the task to all processors
 					depth++;
 					int[][] clonedS = copySchedule(s);
-					int[] clonedProcEndTimes = copyProcEndTimes(procEndTimes);
+					int[] clonedProcEndTimes = Arrays.copyOf(procEndTimes, procEndTimes.length); //copy Processor end times
 					int[][] clonedTasks = copyTasks(tasks);
 					int taskID = freeTasks[i]; //select task to add
 					numFreeTasks = freeTasks.length;
@@ -178,15 +178,6 @@ public class BBAAlgorithm implements Algorithm{
 			}
 		}
 		return clonedS;
-	}
-
-	/**
-	 * Method to make a copy of procEndTimes
-	 * @param procEndTimes
-	 * @return
-	 */
-	private int[] copyProcEndTimes(int[] procEndTimes){
-		return  Arrays.copyOf(procEndTimes, procEndTimes.length); //copy Processor end times
 	}
 
 	/**
