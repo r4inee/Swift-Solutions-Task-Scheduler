@@ -16,6 +16,7 @@ public class BBAAlgorithm implements Algorithm{
 	private int[][] _bestFState; // output schedule
 	private int[][] _communicationCosts; // row represents the parent, col represents the child, value is the cost
 	private Map<Integer, Task> _taskMap;
+	private int _B;
 
 	public static final int EMPTY = -1;
 	public static final	int SCHEDULE_COL_SIZE = 3;
@@ -62,17 +63,12 @@ public class BBAAlgorithm implements Algorithm{
 		for (int i = 0; i < initialSchedule.length; i++){
 			initialSchedule[i][PROCESSOR_INDEX] = EMPTY;
 		}
-		int B = 0; // initialize B as the max bottom level of all root tasks
-		for (Integer taskID : _taskMap.keySet()){
-			if (_taskMap.get(taskID).getNumDependency() == 0){
-				if (_taskMap.get(taskID).getBottomLevel() > B){
-					B = _taskMap.get(taskID).getBottomLevel();
-				}
-			}
+		_B = 0; // Max int
+		for (int task: _taskMap.keySet()){
+			_B += _taskMap.get(task).getProcessTime();
 		}
 		BBA(0,-1,-1,-1,
-				_tasks.length, 0, procEndTimes, _tasks, initialSchedule, B); //Call the recursion algorithm
-		System.out.println(_bestFState);
+				_tasks.length, 0, procEndTimes, _tasks, initialSchedule); //Call the recursion algorithm
 		return convertSchedule(_bestFState);
 	}
 
@@ -85,10 +81,9 @@ public class BBAAlgorithm implements Algorithm{
 	 * @param previousProcessor
 	 * @param numFreeTasks
 	 * @param depth
-	 * @param B
 	 */
-	private int BBA(int currentTask, int currentProcessor, int previousTask,
-			int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s, int B){
+	private void BBA(int currentTask, int currentProcessor, int previousTask,
+			int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s){
 
 		int done = 0; //exit flag
 		//priority queue for tasks based on cost function
@@ -116,13 +111,14 @@ public class BBAAlgorithm implements Algorithm{
 					//calculate parent offset
 					int offset = 0;
 					for(int di = 0; di < _dependencies[taskID].length; di++) {
-						int tempOffset = clonedS[di][1];
+						int tempOffset = clonedS[di][END_TIME];
 						//look at all parents of current task (parent task id is DJ)
 						if(_dependencies[taskID][di] == 1) {
 							//check if that parent is on the same proc
-							if(clonedS[di][2] != j && clonedS[di][2] != -1) {
-								//if the processor is not on the
+							if(clonedS[di][PROCESSOR_INDEX] != j && clonedS[di][PROCESSOR_INDEX] != -1) {
+								//if the processor is not on the same
 								tempOffset += _communicationCosts[di][taskID];
+
 							}
 							//if the
 							if(tempOffset > offset) {
@@ -135,6 +131,7 @@ public class BBAAlgorithm implements Algorithm{
 						taskStart = clonedProcEndTimes[j];
 					} else{
 						taskStart = offset;
+						idleTime += offset - clonedProcEndTimes[j];
 					}
 					clonedS[taskID][PROCESSOR_INDEX] = j;
 					clonedS[taskID][START_TIME] = taskStart;
@@ -149,35 +146,31 @@ public class BBAAlgorithm implements Algorithm{
 					previousProcessor = currentProcessor;
 					currentProcessor = j;
 					currentTask = taskID;
-					int dataReadyTime = dataReadyTime(currentTask, j, clonedS); //calculate data ready time
-					idleTime += dataReadyTime; // calculate idle time
+//					int dataReadyTime = dataReadyTime(currentTask, j, clonedS); //calculate data ready time
 					
 
 					//if cost is lower than B(est) and depth is max, set current best, go back up tree
 				
-					if (cost(clonedS, currentTask, dataReadyTime, idleTime) <= B && depth == _tasks.length){
-						System.out.println("_BESTFSTATEWASSET");
+					if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime) <= _B && depth == _tasks.length){
 						_bestFState = clonedS; // clonedS
-						B = cost(clonedS, currentTask, dataReadyTime, idleTime);
-						return 1;
+						_B = cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime);
+						return;
 					}
 					//if cost is lower than B(est) and depth is max, recursive call
 					
 
-					if (cost(clonedS, currentTask, dataReadyTime, idleTime) <= B && depth <= _tasks.length){
-						done = BBA(currentTask,currentProcessor,previousTask,
-								previousProcessor,numFreeTasks,depth,clonedProcEndTimes, clonedTasks, clonedS,B);
+					if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime) <= _B && depth <= _tasks.length){
+						BBA(currentTask,currentProcessor,previousTask,
+								previousProcessor,numFreeTasks,depth,clonedProcEndTimes, clonedTasks, clonedS);
+
 					}
-					
-					if (done == 0){
-						depth--;
-						idleTime -= dataReadyTime;
+					depth--;
+					if(offset > clonedProcEndTimes[j]) {
+						idleTime -= offset - clonedProcEndTimes[j];
 					}
-					return 1;//otherwise if cost is worse than best, return 1 (end recursion)
 				}
 			}
 		}
-		return 1; // should not get here
 	}
 	
 	public int[][] getBestState(){
@@ -194,9 +187,10 @@ public class BBAAlgorithm implements Algorithm{
 	 */
 	private void getBottomLevels(Set<Integer> nodes, int currentBottomLevel){
 		for (Integer node : nodes){
-			_taskMap.get(node).updateBottomLevel(currentBottomLevel +
-					_taskMap.get(node).getProcessTime());
-
+			if (_taskMap.get(node).getBottomLevel() < currentBottomLevel + _taskMap.get(node).getProcessTime()) {
+				_taskMap.get(node).updateBottomLevel(currentBottomLevel +
+						_taskMap.get(node).getProcessTime());
+			}
 			if (!_taskMap.get(node).getParentTasks().isEmpty()){
 				getBottomLevels(_taskMap.get(node).getParentTasks(),
 						currentBottomLevel +
@@ -211,48 +205,26 @@ public class BBAAlgorithm implements Algorithm{
 	 * @param s
 	 * @return
 	 */
-	private int cost(int[][] s, int taskID, int dataReadyTime, int idleTime) {
+	private int cost(int[][] s, int[] procEndTimes, int taskID, int dataReadyTime, int idleTime) {
 		//cost of the initial state
 		int cost = 0;
-		// get the bottom level of the schedule
-		int scheduleBottomLevel = s[taskID][START_TIME] + _tasks[taskID][BOTTOM_LVL];
-		if (scheduleBottomLevel > idleTime){
-			cost = scheduleBottomLevel;
-		} else {
-			cost = idleTime;
-		}
-		if (dataReadyTime > cost){
-			cost = dataReadyTime;
-		}
-		return cost;
-	}
-
-	/**
-	 * Method to find the data ready time for a task that is
-	 * to be scheduled on a processor
-	 * @param taskID
-	 * @param processor
-	 * @param s
-	 * @return
-	 */
-	private int dataReadyTime(int taskID, int processor, int[][] s){
-		int parentID = 0;
-		int dataReadyTime = 0;
-		// find the latest end time of a parent and it's ID
-		for (int i = 0; i < _dependencies[taskID].length; i++){
-			if (_dependencies[taskID][i] == 1){
-				if (s[_dependencies[taskID][i]][END_TIME] > dataReadyTime){
-					dataReadyTime = s[_dependencies[taskID][i]][END_TIME];
-					parentID = _dependencies[taskID][i];
-				}
+		for (int i = 0; i < procEndTimes.length; i++){
+			if (procEndTimes[i] > cost){
+				cost = procEndTimes[i];
 			}
 		}
-		// if the parent is the on the same processor as the task to be scheduled there is no communication cost
-		if (s[parentID][PROCESSOR_INDEX] == processor){
-			return dataReadyTime;
-		} else { // add the communication cost of the parent to the task to be scheduled
-			return dataReadyTime + _communicationCosts[parentID][taskID];
+		// get the bottom level of the schedule
+		int scheduleBottomLevel = s[taskID][START_TIME] + _tasks[taskID][BOTTOM_LVL];
+		if (scheduleBottomLevel > cost){
+			cost = scheduleBottomLevel;
 		}
+		if (idleTime > cost){
+			cost = idleTime + _tasks[taskID][PROC_TIME];
+		}
+		if (dataReadyTime > cost){
+			cost = dataReadyTime + _tasks[taskID][PROC_TIME];
+		}
+		return cost;
 	}
 
 	/**
@@ -320,7 +292,6 @@ public class BBAAlgorithm implements Algorithm{
 	 */
 	private Schedule convertSchedule(int[][] schedule){
 		Map<Integer,Pair<Integer,Integer>> scheduleMap = new LinkedHashMap<>();
-		System.out.println(schedule.length);
 		for (int i = 0; i < schedule.length; i++){
 			int startTime = schedule[i][START_TIME];
 			int processor = schedule[i][PROCESSOR_INDEX];
