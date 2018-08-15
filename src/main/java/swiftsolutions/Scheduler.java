@@ -101,8 +101,12 @@ public class Scheduler {
         if (_argumentParser.getVisualizeOption().getArgs()) {
             PlatformImpl.startup(() ->{
                 GUI gui = new GUI();
-                gui.start(new Stage());
-                gui.setAlgorithm((VisualAlgorithm)_algorithm);
+                Stage stage = new Stage();
+                stage.setTitle("Scheduling: " + _argumentParser.getFile());
+                gui.start(stage);
+                _algorithm.execute(_offsetTaskMap);
+                gui.setAlgorithmThread((VisualAlgorithm) _algorithm);
+                gui.setScheduler(this);
             });
         } else {
             executeAlgorithm();
@@ -127,17 +131,21 @@ public class Scheduler {
 
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Writing schedule to file..."));
 
+        writeOutput(outputSchedule);
+
+        _outputManager.send(new OutputMessage(OutputType.SUCCESS, "Exiting program..."));
+    }
+
+    public void writeOutput(Schedule schedule) {
         try {
             if (_argumentParser.getOutputFile() != null) {
-                _outputWriter.serialize(_argumentParser.getOutputFile(), outputSchedule, _offsetTaskMap);
+                _outputWriter.serialize(_argumentParser.getOutputFile(), schedule, _offsetTaskMap);
             } else {
-                _outputWriter.serialize(_argumentParser.getFile(), outputSchedule, _offsetTaskMap);
+                _outputWriter.serialize(_argumentParser.getFile(), schedule, _offsetTaskMap);
             }
         } catch (OutputException e) {
             _outputManager.send(new OutputMessage(OutputType.DEBUG, e.getMessage()));
         }
-
-        _outputManager.send(new OutputMessage(OutputType.SUCCESS, "Exiting program..."));
     }
 
 }

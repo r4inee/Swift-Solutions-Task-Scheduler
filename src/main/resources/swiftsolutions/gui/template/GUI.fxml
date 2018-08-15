@@ -175,7 +175,7 @@
                                           <Insets left="20.0" top="17.0" />
                                        </HBox.margin>
                                     </ImageView>
-                                    <Text fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" text="Memory Usage">
+                                    <Text fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" text="CPU Usage">
                                        <font>
                                           <Font size="15.0" />
                                        </font>
@@ -226,14 +226,15 @@
                         </HBox>
                      </top>
                      <center>
-                        <TableView prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                        <TableView fx:id="scheduleTable" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                            <BorderPane.margin>
                               <Insets bottom="20.0" left="20.0" right="20.0" />
                            </BorderPane.margin>
                            <columns>
-                              <TableColumn prefWidth="88.0" text="Node ID" />
-                              <TableColumn prefWidth="90.0" text="Start Time" />
-                              <TableColumn prefWidth="102.0" text="Processor" />
+                              <TableColumn fx:id="nodeIdCol" prefWidth="32.0" text="ID" />
+                              <TableColumn fx:id="startTimeCol" prefWidth="83.0" text="Start Time" />
+                              <TableColumn fx:id="endTimeCol" prefWidth="76.0" text="End Time" />
+                              <TableColumn fx:id="processorCol" prefWidth="89.0" text="Processor" />
                            </columns>
                         </TableView>
                      </center>
@@ -281,7 +282,7 @@
                                     <Font size="14.0" />
                                  </font>
                               </Text>
-                              <Text fill="#616161" strokeType="OUTSIDE" strokeWidth="0.0" text="0" textAlignment="CENTER">
+                              <Text fx:id="bound" fill="#616161" strokeType="OUTSIDE" strokeWidth="0.0" text="0" textAlignment="CENTER">
                                  <font>
                                     <Font size="34.0" />
                                  </font>
@@ -299,7 +300,7 @@
                                     <Font size="14.0" />
                                  </font>
                               </Text>
-                              <Text fill="#616161" strokeType="OUTSIDE" strokeWidth="0.0" text="0" textAlignment="CENTER">
+                              <Text fx:id="validSchedules" fill="#616161" strokeType="OUTSIDE" strokeWidth="0.0" text="0" textAlignment="CENTER">
                                  <font>
                                     <Font size="34.0" />
                                  </font>
