@@ -10,18 +10,23 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 public class DOTOutputWriter implements OutputWriter {
 
     private BufferedWriter _writer;
     private Map<Integer, Task> _taskMap;
+    private Map<Integer, Task> _offsetTaskMap;
 
     @Override
-    public void serialize(String filename, Schedule schedule, Map<Integer, Task> taskMap) throws OutputException {
-        _taskMap = taskMap;
+    public void serialize(String filename, Schedule schedule, Map<Integer, Task> offsetTaskMap) throws OutputException {
+        _offsetTaskMap = offsetTaskMap;
+        _taskMap = convertTaskID(offsetTaskMap);
         String outputFile = new File(filename).getName();
+
         String outputFileName = new File(filename).getName();
+
         if (outputFile.length() > 1) {
             outputFile = outputFile.substring(0, 1).toUpperCase() + outputFile.substring(1);
         } else {
@@ -35,15 +40,16 @@ public class DOTOutputWriter implements OutputWriter {
 
         try {
             _writer = new BufferedWriter(new FileWriter(outputFileName + "-output.dot"));
+
             _writer.write("digraph \"output" + outputFile + "\" {\n");
 
-            for (Integer task : taskMap.keySet()) {
+            for (Integer task :_taskMap.keySet()) {
                 Pair<Integer, Integer> proc = schedule.getProcessor(task);
                 writeNode(task, proc.getA(), proc.getB());
             }
-            for (Integer child : taskMap.keySet()) {
+            for (Integer child : _taskMap.keySet()) {
                 for (Integer parent : _taskMap.get(child).getParentTasks()) {
-                    writeEdge(parent, child, taskMap.get(child).getCommunicationCosts(parent));
+                    writeEdge(parent, child, _taskMap.get(child).getCommunicationCosts(parent));
                 }
 
             }
@@ -64,7 +70,15 @@ public class DOTOutputWriter implements OutputWriter {
     }
 
     private void writeEdge(Integer parentTask, Integer childTask, int weight) throws IOException {
-        _writer.write("\t\t"  + _taskMap.get(parentTask).getTaskID() + " -> "
+        _writer.write("\t\t"  + _offsetTaskMap.get(parentTask).getTaskID() + " -> "
                 + _taskMap.get(childTask).getTaskID() + "\t[Weight=" + weight + "];\n");
+    }
+
+    private Map<Integer, Task> convertTaskID(Map<Integer, Task> tasks) {
+        Map<Integer, Task> newTaskMap = new HashMap<>();
+        for (Integer offsetID : tasks.keySet()) {
+            newTaskMap.put(tasks.get(offsetID).getTaskID(), tasks.get(offsetID));
+        }
+        return newTaskMap;
     }
 }

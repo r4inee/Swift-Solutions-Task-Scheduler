@@ -1,9 +1,6 @@
 package swiftsolutions.taskscheduler;
 
-import javafx.beans.binding.IntegerBinding;
 import swiftsolutions.util.Pair;
-
-import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -12,6 +9,7 @@ import java.util.stream.Collectors;
  */
 public class Schedule {
 
+	// Map for Task to Pair<ProcessorID, StartTime>
 	private Map<Integer, Pair<Integer, Integer>> _taskToProcessorMap;
 	private int _numProc;
 
@@ -63,10 +61,16 @@ public class Schedule {
 		return output;
 	}
 
+	
+
+
 	public Pair<Integer, Integer> getProcessor(Integer task) {
 		return _taskToProcessorMap.get(task);
 	}
 	public int getNumProc() {
 		return _numProc;
+	}
+	public Map<Integer, Pair<Integer, Integer>> getTaskToProcessorMap() {
+		return _taskToProcessorMap;
 	}
 }
