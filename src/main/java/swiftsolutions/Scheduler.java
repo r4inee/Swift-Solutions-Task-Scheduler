@@ -85,7 +85,7 @@ public class Scheduler {
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Executing algorithm..."));
 
         long start = System.currentTimeMillis();
-        Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR, numProcessors, numCores);
+        Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND, numProcessors, numCores);
         Schedule outputSchedule = algorithm.execute(offsetTaskMap);
 
         long end = System.currentTimeMillis();
