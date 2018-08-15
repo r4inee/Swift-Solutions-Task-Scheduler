@@ -109,12 +109,35 @@ public class BBAAlgorithm implements Algorithm{
 							clonedTasks[ti][tj] = tasks[ti][tj];
 						}
 					}
-					numFreeTasks = freeTasks.length;
-					int lastEndTime = clonedProcEndTimes[j]; //gets last scheduled task end time, used when adding a new task
 					int taskID = freeTasks[i]; //select task to add
+					numFreeTasks = freeTasks.length;
+					//calculate parent offset
+					int offset = 0;
+					for(int di = 0; di < _dependencies[taskID].length; di++) {
+						int tempOffset = clonedS[di][1];
+						//look at all parents of current task (parent task id is DJ)
+						if(_dependencies[taskID][di] == 1) {
+							//check if that parent is on the same proc
+							if(clonedS[di][2] != j && clonedS[di][2] != -1) {
+								//if the processor is not on the
+								tempOffset += _communicationCosts[di][taskID];
+							}
+							//if the
+							if(tempOffset > offset) {
+								offset = tempOffset;
+							}
+						}
+					}
+					int taskStart;
+					if(offset < clonedProcEndTimes[j]) {
+						taskStart = clonedProcEndTimes[j];
+					} else{
+						taskStart = offset;
+					}
+					int lastEndTime = clonedProcEndTimes[j]; //gets last scheduled task end time, used when adding a new task
 					clonedS[taskID][PROCESSOR_INDEX] = j;
-					clonedS[taskID][START_TIME] = lastEndTime;
-					clonedS[taskID][END_TIME] = lastEndTime + clonedTasks[taskID][PROC_TIME];
+					clonedS[taskID][START_TIME] = taskStart;
+					clonedS[taskID][END_TIME] = taskStart + clonedTasks[taskID][PROC_TIME];
 					clonedProcEndTimes[j] = clonedS[taskID][END_TIME];
 					System.out.println(taskID + "ID");
 					for(int dj = 0; dj < _dependencies.length; dj++) {
