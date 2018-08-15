@@ -8,7 +8,7 @@ import swiftsolutions.util.Pair;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class BBAAlgorithm implements Algorithm{
+public class BNBAlgorithm implements Algorithm{
 	private int _numProcessors;
 
 	private int[][] _tasks; // row represents the task, cols represent { proc time, number of dependencies, bottom level}
@@ -30,7 +30,7 @@ public class BBAAlgorithm implements Algorithm{
 	public static final int NUM_DEP = 1;
 	public static final int BOTTOM_LVL = 2;
 
-	public BBAAlgorithm(){}
+	public BNBAlgorithm(){}
 
 	/**
 	 * Overrides Algorithm setProcessors
