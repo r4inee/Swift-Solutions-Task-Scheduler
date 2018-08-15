@@ -3,7 +3,6 @@
 }
 
 #topbar {
-  -fx-background-color: #46BB7C;
   -fx-height: 50;
   -fx-effect: dropshadow(three-pass-box, gray, 10, 0, 0, 0);
 }

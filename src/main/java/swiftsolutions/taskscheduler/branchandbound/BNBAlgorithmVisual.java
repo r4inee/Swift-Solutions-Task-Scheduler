@@ -15,13 +15,14 @@ import java.util.stream.Collectors;
 public class BNBAlgorithmVisual extends VisualAlgorithm {
 
     private int _numProcessors;
-    private BNBSchedule _optimalSchedule;
+    private volatile BNBSchedule _optimalSchedule;
     private int _bound;
     private Set<BNBSchedule> _seenSchedules;
     private Map<Integer, Task> _taskMap;
     private OutputManager _outputManager;
-    private int _branches;
-    private int _validSchedules;
+    private volatile int _branches;
+    private volatile int _validSchedules;
+    private volatile int _pruned;
     private volatile boolean _done;
 
     @Override
@@ -32,6 +33,7 @@ public class BNBAlgorithmVisual extends VisualAlgorithm {
     public BNBAlgorithmVisual() {
         _seenSchedules = new HashSet<>();
         _branches = 0;
+        _pruned = 0;
         _done = false;
     }
 
@@ -114,6 +116,11 @@ public class BNBAlgorithmVisual extends VisualAlgorithm {
         return _optimalSchedule == null ? null : _optimalSchedule._schedule;
     }
 
+    @Override
+    public int getProcessors() {
+        return _numProcessors;
+    }
+
     /**
      * Recursive depth-first search branch and bound algorithm.
      * @param tasks tasks that have not been scheduled
@@ -132,6 +139,7 @@ public class BNBAlgorithmVisual extends VisualAlgorithm {
 
         // If we've seen a similar schedule return, if not add it.
         if (_seenSchedules.contains(schedule)) {
+            _pruned++;
             return;
         } else {
             _seenSchedules.add(schedule);
@@ -299,6 +307,11 @@ public class BNBAlgorithmVisual extends VisualAlgorithm {
         return lowerBound;
     }
 
+    @Override
+    public int getPruned() {
+        return _pruned;
+    }
+
     public int getBranches() {
         return this._branches;
     }
@@ -327,7 +340,6 @@ public class BNBAlgorithmVisual extends VisualAlgorithm {
         // Star the algorithm
         dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors), null, new HashSet<>(), -1);
         _done = true;
-        System.out.println("hello");
     }
 
 
