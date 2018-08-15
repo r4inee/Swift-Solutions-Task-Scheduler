@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * Class that executes the Branch and bound algorithm
  */
-public class BNBAlgorithmVisual implements VisualAlgorithm {
+public class BNBAlgorithmVisual extends VisualAlgorithm {
 
     private int _numProcessors;
     private BNBSchedule _optimalSchedule;
@@ -21,10 +21,18 @@ public class BNBAlgorithmVisual implements VisualAlgorithm {
     private Map<Integer, Task> _taskMap;
     private OutputManager _outputManager;
     private int _branches;
+    private int _validSchedules;
+    private volatile boolean _done;
+
+    @Override
+    public boolean isDone() {
+        return _done;
+    }
 
     public BNBAlgorithmVisual() {
         _seenSchedules = new HashSet<>();
         _branches = 0;
+        _done = false;
     }
 
     /**
@@ -43,36 +51,26 @@ public class BNBAlgorithmVisual implements VisualAlgorithm {
     public Schedule execute(Map<Integer, Task> tasks) {
         _taskMap = tasks;
 
-        // Find the leaf nodes.
-        Set<Task> leafs = tasks.values()
-                .stream()
-                .filter((Task task) -> task.getChildTasks().size() == 0)
-                .collect(Collectors.toSet());
+        return null;
+    }
 
-        // Use leaf nodes to find the bottom levels of all the tasks
-        for (Task leaf: leafs) {
-            leaf.updateBottomLevel(leaf.getProcessTime());
-            getBottomLevels(leaf.getParentTasks(), leaf.getProcessTime());
-        }
+    @Override
+    public int getValidSchedules() {
+        return _validSchedules;
+    }
 
-        // Convert the tasks to BNB Tasks
-        HashMap<Integer, BNBTask> convertedTasks = convertTasks();
-
-        // Set an initial bound
-        _bound = Integer.MAX_VALUE;
-
-        // Star the algorithm
-        dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors), null, new HashSet<>(), -1);
-
-        return convertSchedule(_optimalSchedule);
+    @Override
+    public int getUpperbound() {
+        return _bound;
     }
 
     /**
      * Takes a BNBSchedule and returns it as a valid Schedule
      */
-    private Schedule convertSchedule(BNBSchedule bnbSchedule) {
+    @Override
+    public Schedule getFinishedSchedule() {
         Map<Integer, Pair<Integer, Integer>> taskMaps = new LinkedHashMap<>();
-        int[][] arraySchedule = bnbSchedule._schedule;
+        int[][] arraySchedule = _optimalSchedule._schedule;
 
         // Convert schedule to taskMaps
         for (int i = 0; i < arraySchedule.length; i++) {
@@ -111,6 +109,11 @@ public class BNBAlgorithmVisual implements VisualAlgorithm {
         }
     }
 
+    @Override
+    public int[][] getSchedule() {
+        return _optimalSchedule == null ? null : _optimalSchedule._schedule;
+    }
+
     /**
      * Recursive depth-first search branch and bound algorithm.
      * @param tasks tasks that have not been scheduled
@@ -120,6 +123,9 @@ public class BNBAlgorithmVisual implements VisualAlgorithm {
     private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule, Queue<BNBTask> fto,
                      Set<BNBTask> free, int lastProc) {
         _branches++;
+        if (isInterrupted()) {
+            return;
+        }
         if (lowerBound(schedule) >= upperBound) {
             return;
         }
@@ -135,6 +141,7 @@ public class BNBAlgorithmVisual implements VisualAlgorithm {
         if (tasks.isEmpty()) {
             long candidateUpperBound = schedule.getCost();
             if (candidateUpperBound <= upperBound) {
+                _validSchedules++;
                 _optimalSchedule = schedule;
                 _bound = (int) candidateUpperBound;
             }
@@ -292,12 +299,36 @@ public class BNBAlgorithmVisual implements VisualAlgorithm {
         return lowerBound;
     }
 
-
-    @Override
     public int getBranches() {
         return this._branches;
     }
 
+    @Override
+    public void run() {
+        super.run();
+        // Find the leaf nodes.
+        Set<Task> leafs = _taskMap.values()
+                .stream()
+                .filter((Task task) -> task.getChildTasks().size() == 0)
+                .collect(Collectors.toSet());
+
+        // Use leaf nodes to find the bottom levels of all the tasks
+        for (Task leaf: leafs) {
+            leaf.updateBottomLevel(leaf.getProcessTime());
+            getBottomLevels(leaf.getParentTasks(), leaf.getProcessTime());
+        }
+
+        // Convert the tasks to BNB Tasks
+        HashMap<Integer, BNBTask> convertedTasks = convertTasks();
+
+        // Set an initial bound
+        _bound = Integer.MAX_VALUE;
+
+        // Star the algorithm
+        dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors), null, new HashSet<>(), -1);
+        _done = true;
+        System.out.println("hello");
+    }
 
 
 }

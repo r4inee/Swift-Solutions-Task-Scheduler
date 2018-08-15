@@ -5,16 +5,22 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import swiftsolutions.Scheduler;
 import swiftsolutions.interfaces.taskscheduler.ParallelAlgorithm;
 import swiftsolutions.interfaces.taskscheduler.VisualAlgorithm;
+import swiftsolutions.taskscheduler.Schedule;
 
 
 public class GUI extends Application {
 
     private GUIController _guiController;
 
-    public void setAlgorithm(VisualAlgorithm algorithm) {
-        _guiController.setAlgorithm(algorithm);
+    public void setAlgorithmThread(VisualAlgorithm thread) {
+        _guiController.setAlgorithmThread(thread);
+    }
+
+    public void setScheduler(Scheduler scheduler) {
+        _guiController.setScheduler(scheduler);
     }
 
     @Override
