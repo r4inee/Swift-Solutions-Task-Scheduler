@@ -189,7 +189,7 @@ public class BNBSchedule {
         int proc = 0;
         int finish = Integer.MAX_VALUE;
         for (int i = 0; i < _procEndTimes.length; i++) {
-            if (_procEndTimes[i] < finish) {
+            if (_procEndTimes[i] <= finish) {
                 finish = _procEndTimes[i];
                 proc = i;
             }
