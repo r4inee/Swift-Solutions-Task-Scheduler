@@ -18,6 +18,7 @@ public class BNBAlgorithm implements Algorithm {
     private int _bound;
     private Set<BNBSchedule> _seenSchedules;
     private Map<Integer, Task> _taskMap;
+    public static int branchCount;
 
     public BNBAlgorithm() {
         _seenSchedules = new HashSet<>();
@@ -60,7 +61,7 @@ public class BNBAlgorithm implements Algorithm {
 
         // Star the algorithm
         dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors), null, new HashSet<>(), -1);
-
+        System.out.println(branchCount);
         return convertSchedule(_optimalSchedule);
     }
 
@@ -118,13 +119,14 @@ public class BNBAlgorithm implements Algorithm {
      */
     private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule, Queue<BNBTask> fto,
                      Set<BNBTask> free, int lastProc) {
+        branchCount++;
         // If the lower bound of the current schedule is larger than the upper bound, return;
         if (lowerBound(schedule) >= upperBound) {
             return;
         }
 
         // If we've seen a similar schedule return, if not add it.
-        if (_seenSchedules.contains(schedule)) {
+        if (_seenSchedules.contains(schedule) && (fto == null)) {
             return;
         } else {
             _seenSchedules.add(schedule);
@@ -146,7 +148,10 @@ public class BNBAlgorithm implements Algorithm {
                 .filter((BNBTask task) -> task._numDependency == 0)
                 .collect(Collectors.toSet());
 
-        if ((fto != null) && (fto.size() == availableTasks.size() && (!fto.isEmpty()))) {
+        if ((fto != null) && (!fto.isEmpty())) {
+            if (fto.size() != availableTasks.size()) {
+                return;
+            }
             // When the schedule is in FTO automatically poll for the next task in the queue and schedule it.
             BNBTask task = fto.poll();
             for (int i = 0; i < _numProcessors; i++) {
@@ -161,37 +166,21 @@ public class BNBAlgorithm implements Algorithm {
                 dfs(clonedTasks, _bound, clonedSchedule, fto, availableTasks, i);
             }
             return;
-        } else if ((fto != null) && (fto.size() != availableTasks.size() && (!fto.isEmpty()))) {
-            return;
-        } else if (isAllIndependent(availableTasks)){
-            Queue<BNBTask> queue = null;
+        } else if (isAllIndependent(availableTasks) && (availableTasks.size() == _taskMap.size())) {
             Comparator<BNBTask> c = (o1, o2) -> {
                 Integer o1Process = o1._procTime;
                 Integer o2Process = o2._procTime;
                 return o2Process.compareTo(o1Process);
             };
-            List<BNBTask> sorted = new ArrayList<>(availableTasks);
-            sorted.sort(c);
-            for (int i = 0; i < sorted.size(); i++) {
-                BNBTask t = sorted.get(i);
-                int proc = schedule.getShortestProc();
-                scheduleTask(t, tasks);
-                schedule.addTask(t, proc);
-                tasks.remove(t._id);
-                if (lowerBound(schedule) >= upperBound) {
-                    return;
-                }
-                if (i == (sorted.size()-1)) {
-                    long candidateUpperBound = schedule.getCost();
-                    if (candidateUpperBound <= upperBound) {
-                        _optimalSchedule = schedule;
-                        _bound = (int) candidateUpperBound;
-                    }
-                }
-            }
+            Queue<BNBTask> queue = new PriorityQueue<>(availableTasks.size(), c);
+            queue.addAll(availableTasks);
+            BNBSchedule clonedSchedule = schedule.copy();
+            HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
+            tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
+            branchCount--;
+            dfs(clonedTasks, _bound, clonedSchedule, queue, availableTasks, lastProc);
             return;
         } else if (isFTO(availableTasks, schedule)) {
-            Queue<BNBTask> queue = null;
             Comparator<BNBTask> c = (o1, o2) -> {
                 Integer parentO1DRT = 0;
                 Integer parentO2DRT = 0;
@@ -219,7 +208,7 @@ public class BNBAlgorithm implements Algorithm {
 
                 return parentO1DRT.compareTo(parentO2DRT);
             };
-            queue = new PriorityQueue<>(availableTasks.size(), c);
+            Queue<BNBTask> queue = new PriorityQueue<>(availableTasks.size(), c);
             queue.addAll(availableTasks);
             if (queue.size() > 1) {
                 List<BNBTask> ftoTask = new ArrayList<>();
@@ -251,11 +240,13 @@ public class BNBAlgorithm implements Algorithm {
                     BNBSchedule clonedSchedule = schedule.copy();
                     HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
                     tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
-                    dfs(clonedTasks, _bound, clonedSchedule, fto, availableTasks, -1);
+                    branchCount--;
+                    dfs(clonedTasks, _bound, clonedSchedule, fto, availableTasks, lastProc);
+                    return;
                 }
             }
         }
-
+        
         // For try schedule each available task to each schedule
 
         for (BNBTask availableTask : availableTasks) {
@@ -281,8 +272,6 @@ public class BNBAlgorithm implements Algorithm {
                 clonedTasks.remove(availableTask._id);
                 // Recursive call on new schedule
                 dfs(clonedTasks, _bound, clonedSchedule, null, availableTasks, i);
-
-
             }
         }
     }
@@ -340,7 +329,8 @@ public class BNBAlgorithm implements Algorithm {
 
     /**
      * Notify children that its parent has been scheduled
-     * @param task task being scheduled
+     *
+     * @param task  task being scheduled
      * @param tasks map of unscheduled tasks
      */
     private void scheduleTask(BNBTask task, HashMap<Integer, BNBTask> tasks) {
@@ -353,6 +343,7 @@ public class BNBAlgorithm implements Algorithm {
 
     /**
      * Get an estimate for the lower bound cost of a schedule
+     *
      * @param schedule the schedule that we want the lower bound of.
      * @return the lower bound of the schedule.
      */
