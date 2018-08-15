@@ -6,7 +6,7 @@ import swiftsolutions.input.DOTInputParser;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
-import swiftsolutions.taskscheduler.brandandboundastar.BNBAlgorithm;
+import swiftsolutions.taskscheduler.brandandboundastar.BBAAlgorithm;
 import swiftsolutions.util.Pair;
 
 import java.util.HashMap;
@@ -26,7 +26,7 @@ public class ValidationTest {
             e.printStackTrace();
         }
 
-        Algorithm algorithm = new BNBAlgorithm();
+        Algorithm algorithm = new BBAAlgorithm();
         algorithm.setProcessors(2);
         Schedule outputSchedule = algorithm.execute(taskMap);
 
@@ -40,7 +40,7 @@ public class ValidationTest {
         }
         assertEquals(maxEndTime, 28);
 
-        algorithm = new BNBAlgorithm();
+        algorithm = new BBAAlgorithm();
         algorithm.setProcessors(4);
         outputSchedule = algorithm.execute(taskMap);
 
@@ -65,7 +65,7 @@ public class ValidationTest {
             e.printStackTrace();
         }
 
-        Algorithm algorithm = new BNBAlgorithm();
+        Algorithm algorithm = new BBAAlgorithm();
         algorithm.setProcessors(2);
         Schedule outputSchedule = algorithm.execute(taskMap);
 
@@ -79,7 +79,7 @@ public class ValidationTest {
         }
         assertEquals(maxEndTime, 581);
 
-        algorithm = new BNBAlgorithm();
+        algorithm = new BBAAlgorithm();
         algorithm.setProcessors(4);
         outputSchedule = algorithm.execute(taskMap);
 
@@ -104,7 +104,7 @@ public class ValidationTest {
             e.printStackTrace();
         }
 
-        Algorithm algorithm = new BNBAlgorithm();
+        Algorithm algorithm = new BBAAlgorithm();
         algorithm.setProcessors(2);
         Schedule outputSchedule = algorithm.execute(taskMap);
 
@@ -118,7 +118,7 @@ public class ValidationTest {
         }
         assertEquals(maxEndTime, 55);
 
-        algorithm = new BNBAlgorithm();
+        algorithm = new BBAAlgorithm();
         algorithm.setProcessors(4);
         outputSchedule = algorithm.execute(taskMap);
 
@@ -143,7 +143,7 @@ public class ValidationTest {
             e.printStackTrace();
         }
 
-        Algorithm algorithm = new BNBAlgorithm();
+        Algorithm algorithm = new BBAAlgorithm();
         algorithm.setProcessors(2);
         Schedule outputSchedule = algorithm.execute(taskMap);
 
@@ -157,7 +157,7 @@ public class ValidationTest {
         }
         assertEquals(maxEndTime, 50);
 
-        algorithm = new BNBAlgorithm();
+        algorithm = new BBAAlgorithm();
         algorithm.setProcessors(4);
         outputSchedule = algorithm.execute(taskMap);
 
@@ -182,7 +182,7 @@ public class ValidationTest {
 //            e.printStackTrace();
 //        }
 //
-//        Algorithm algorithm = new BNBAlgorithm();
+//        Algorithm algorithm = new BBAAlgorithm();
 //        algorithm.setProcessors(2);
 //        Schedule outputSchedule = algorithm.execute(taskMap);
 //
@@ -196,7 +196,7 @@ public class ValidationTest {
 //        }
 //        assertEquals(maxEndTime, 350);
 //
-//        algorithm = new BNBAlgorithm();
+//        algorithm = new BBAAlgorithm();
 //        algorithm.setProcessors(4);
 //        outputSchedule = algorithm.execute(taskMap);
 //
