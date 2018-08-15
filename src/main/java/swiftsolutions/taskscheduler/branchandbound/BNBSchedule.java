@@ -28,7 +28,7 @@ public class BNBSchedule {
     public BNBSchedule(int numTasks, int numProc) {
         _numTasks = numTasks;
         _schedule = new int[_numTasks][3];
-        _firstTask = new int[numTasks];
+        _firstTask = new int[numProc];
 
         // Initialize empty schedule
         for (int i = 0; i < _schedule.length; i++) {
