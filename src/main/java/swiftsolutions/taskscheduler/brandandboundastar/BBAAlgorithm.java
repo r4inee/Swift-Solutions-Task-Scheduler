@@ -8,7 +8,7 @@ import swiftsolutions.util.Pair;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class BNBAlgorithm implements Algorithm{
+public class BBAAlgorithm implements Algorithm{
 	private int _numProcessors;
 
 	private int[][] _tasks; // row represents the task, cols represent { proc time, number of dependencies, bottom level}
@@ -30,7 +30,7 @@ public class BNBAlgorithm implements Algorithm{
 	public static final int NUM_DEP = 1;
 	public static final int BOTTOM_LVL = 2;
 
-	public BNBAlgorithm(){}
+	public BBAAlgorithm(){}
 
 	/**
 	 * Overrides Algorithm setProcessors
@@ -99,19 +99,9 @@ public class BNBAlgorithm implements Algorithm{
 			for (int i = 0; i < numFreeTasks; i++) {
 				for (int j = 0; j < _numProcessors; j++) { //add the task to all processors
 					depth++;
-					int[][] clonedS = new int[s.length][s[START_TIME].length]; //START_TIME used to just to find length
-					for (int si = 0; si < s.length; si++){ //copies the schedule instead of re-reference, tasks are removed if branch moves up
-						for (int sj = 0; sj < s[si].length; sj++){
-							clonedS[si][sj] = s[si][sj];
-						}
-					}
-					int[] clonedProcEndTimes = Arrays.copyOf(procEndTimes, procEndTimes.length); //copy Processor end times
-					int[][] clonedTasks = new int[tasks.length][tasks[PROC_TIME].length]; //copies the tasks
-					for (int ti = 0; ti < tasks.length; ti++){
-						for (int tj = 0; tj < tasks[ti].length; tj++){
-							clonedTasks[ti][tj] = tasks[ti][tj];
-						}
-					}
+					int[][] clonedS = copySchedule(s);
+					int[] clonedProcEndTimes = copyProcEndTimes(procEndTimes);
+					int[][] clonedTasks = copyTasks(tasks);
 					int taskID = freeTasks[i]; //select task to add
 					numFreeTasks = freeTasks.length;
 					//calculate parent offset
@@ -158,7 +148,7 @@ public class BNBAlgorithm implements Algorithm{
                     if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && depth == _tasks.length){
 						_bestFState = clonedS; // clonedS
 						_B = cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks);
-                        return;
+						return;
 					}
 					//if cost is lower than B(est) and depth is max, recursive call
 					if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && depth <= _tasks.length){
@@ -173,6 +163,45 @@ public class BNBAlgorithm implements Algorithm{
 				}
 			}
 		}
+	}
+
+	/**
+	 * Method to make a copy of a schedule
+	 * @param s
+	 * @return
+	 */
+	private int[][] copySchedule(int[][] s){
+		int[][] clonedS = new int[s.length][s[START_TIME].length]; //START_TIME used to just to find length
+		for (int si = 0; si < s.length; si++){ //copies the schedule instead of re-reference, tasks are removed if branch moves up
+			for (int sj = 0; sj < s[si].length; sj++){
+				clonedS[si][sj] = s[si][sj];
+			}
+		}
+		return clonedS;
+	}
+
+	/**
+	 * Method to make a copy of procEndTimes
+	 * @param procEndTimes
+	 * @return
+	 */
+	private int[] copyProcEndTimes(int[] procEndTimes){
+		return  Arrays.copyOf(procEndTimes, procEndTimes.length); //copy Processor end times
+	}
+
+	/**
+	 * Method to make a copy of tasks
+	 * @param tasks
+	 * @return
+	 */
+	private int[][] copyTasks(int[][] tasks){
+		int[][] clonedTasks = new int[tasks.length][tasks[PROC_TIME].length]; //copies the tasks
+		for (int ti = 0; ti < tasks.length; ti++){
+			for (int tj = 0; tj < tasks[ti].length; tj++){
+				clonedTasks[ti][tj] = tasks[ti][tj];
+			}
+		}
+		return clonedTasks;
 	}
 
 	/**
