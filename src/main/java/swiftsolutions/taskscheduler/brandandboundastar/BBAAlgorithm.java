@@ -72,6 +72,7 @@ public class BBAAlgorithm implements Algorithm{
 		}
 		BBA(0,-1,-1,-1,
 				_tasks.length, 0, procEndTimes, _tasks, initialSchedule, B); //Call the recursion algorithm
+		System.out.println(_bestFState);
 		return convertSchedule(_bestFState);
 	}
 
@@ -88,6 +89,7 @@ public class BBAAlgorithm implements Algorithm{
 	 */
 	private int BBA(int currentTask, int currentProcessor, int previousTask,
 			int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s, int B){
+
 		int done = 0; //exit flag
 		//priority queue for tasks based on cost function
 		int[] freeTasks = free(s, tasks);
@@ -105,7 +107,7 @@ public class BBAAlgorithm implements Algorithm{
 					int[] clonedProcEndTimes = Arrays.copyOf(procEndTimes, procEndTimes.length); //copy Processor end times
 					int[][] clonedTasks = new int[tasks.length][tasks[PROC_TIME].length]; //copies the tasks
 					for (int ti = 0; ti < tasks.length; ti++){
-						for (int tj = 0; tj < tasks.length; tj++){
+						for (int tj = 0; tj < tasks[ti].length; tj++){
 							clonedTasks[ti][tj] = tasks[ti][tj];
 						}
 					}
@@ -134,15 +136,13 @@ public class BBAAlgorithm implements Algorithm{
 					} else{
 						taskStart = offset;
 					}
-					int lastEndTime = clonedProcEndTimes[j]; //gets last scheduled task end time, used when adding a new task
 					clonedS[taskID][PROCESSOR_INDEX] = j;
 					clonedS[taskID][START_TIME] = taskStart;
 					clonedS[taskID][END_TIME] = taskStart + clonedTasks[taskID][PROC_TIME];
 					clonedProcEndTimes[j] = clonedS[taskID][END_TIME];
-					System.out.println(taskID + "ID");
 					for(int dj = 0; dj < _dependencies.length; dj++) {
 						if(_dependencies[dj][taskID] == 1){
-							clonedTasks[dj][1]--;
+							clonedTasks[dj][NUM_DEP]--;
 						}
 					}
 					previousTask = currentTask; //reset method values
@@ -151,27 +151,38 @@ public class BBAAlgorithm implements Algorithm{
 					currentTask = taskID;
 					int dataReadyTime = dataReadyTime(currentTask, j, clonedS); //calculate data ready time
 					idleTime += dataReadyTime; // calculate idle time
+					
+
 					//if cost is lower than B(est) and depth is max, set current best, go back up tree
+				
 					if (cost(clonedS, currentTask, dataReadyTime, idleTime) <= B && depth == _tasks.length){
+						System.out.println("_BESTFSTATEWASSET");
 						_bestFState = clonedS; // clonedS
 						B = cost(clonedS, currentTask, dataReadyTime, idleTime);
 						return 1;
 					}
 					//if cost is lower than B(est) and depth is max, recursive call
+					
+
 					if (cost(clonedS, currentTask, dataReadyTime, idleTime) <= B && depth <= _tasks.length){
 						done = BBA(currentTask,currentProcessor,previousTask,
 								previousProcessor,numFreeTasks,depth,clonedProcEndTimes, clonedTasks, clonedS,B);
 					}
+					
 					if (done == 0){
 						depth--;
 						idleTime -= dataReadyTime;
 					}
-					//otherwise if cost is worse than best, return 1 (end recursion)
-					return 1;
+					return 1;//otherwise if cost is worse than best, return 1 (end recursion)
 				}
 			}
 		}
 		return 1; // should not get here
+	}
+	
+	public int[][] getBestState(){
+		
+		return _bestFState;
 	}
 
 	/**
@@ -278,12 +289,19 @@ public class BBAAlgorithm implements Algorithm{
 	 * class
 	 */
 	private void convertTasks(){
+
+		//initialize _tasks array
+		_tasks = new int[_taskMap.size()][3];
 		//Parse the Task into the 2D array tasks
 		for (int taskID: _taskMap.keySet()){
 			_tasks[taskID][PROC_TIME] = _taskMap.get(taskID).getProcessTime();
 			_tasks[taskID][NUM_DEP] = _taskMap.get(taskID).getNumDependency();
 			_tasks[taskID][BOTTOM_LVL] = _taskMap.get(taskID).getBottomLevel();
 		}
+		
+		//initialise _dependencies + _commcosts
+		_dependencies = new int[_taskMap.size()][_taskMap.size()];
+		_communicationCosts = new int[_taskMap.size()][_taskMap.size()];
 		//Parse the parents into the 2D array dependencies
 		for (int taskID: _taskMap.keySet()){
 			for (int parentID: _taskMap.get(taskID).getParentTasks()){
@@ -302,6 +320,7 @@ public class BBAAlgorithm implements Algorithm{
 	 */
 	private Schedule convertSchedule(int[][] schedule){
 		Map<Integer,Pair<Integer,Integer>> scheduleMap = new LinkedHashMap<>();
+		System.out.println(schedule.length);
 		for (int i = 0; i < schedule.length; i++){
 			int startTime = schedule[i][START_TIME];
 			int processor = schedule[i][PROCESSOR_INDEX];
