@@ -17,6 +17,7 @@ public class BBAAlgorithm implements Algorithm{
 	private int[][] _communicationCosts; // row represents the parent, col represents the child, value is the cost
 	private Map<Integer, Task> _taskMap;
 	private int _B;
+	private int _fSInit;
 
 	public static final int EMPTY = -1;
 	public static final	int SCHEDULE_COL_SIZE = 3;
@@ -28,6 +29,8 @@ public class BBAAlgorithm implements Algorithm{
 	public static final int PROC_TIME = 0;
 	public static final int NUM_DEP = 1;
 	public static final int BOTTOM_LVL = 2;
+
+	public BBAAlgorithm(){}
 
 	/**
 	 * Overrides Algorithm setProcessors
@@ -64,12 +67,18 @@ public class BBAAlgorithm implements Algorithm{
 			initialSchedule[i][PROCESSOR_INDEX] = EMPTY;
 		}
 		_B = 0; // Max int
+        int maxBotLevel = 0;
 		for (int task: _taskMap.keySet()){
 			_B += _taskMap.get(task).getProcessTime();
+			if (_taskMap.get(task).getBottomLevel() > maxBotLevel){
+			    maxBotLevel = _taskMap.get(task).getBottomLevel();
+            }
 		}
+        _fSInit = Math.max(_B/_numProcessors, maxBotLevel);
+        int idleTime = 0;
 		BBA(0,-1,-1,-1,
-				_tasks.length, 0, procEndTimes, _tasks, initialSchedule); //Call the recursion algorithm
-		return convertSchedule(_bestFState);
+				_tasks.length, 0, procEndTimes, _tasks, initialSchedule, idleTime); //Call the recursion algorithm
+        return convertSchedule(_bestFState);
 	}
 
 	/**
@@ -83,12 +92,9 @@ public class BBAAlgorithm implements Algorithm{
 	 * @param depth
 	 */
 	private void BBA(int currentTask, int currentProcessor, int previousTask,
-			int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s){
-
-		int done = 0; //exit flag
+			int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s, int idleTime){
 		//priority queue for tasks based on cost function
 		int[] freeTasks = free(s, tasks);
-		int idleTime = 0;
 		if (freeTasks.length != 0) {
 			for (int i = 0; i < numFreeTasks; i++) {
 				for (int j = 0; j < _numProcessors; j++) { //add the task to all processors
@@ -109,18 +115,16 @@ public class BBAAlgorithm implements Algorithm{
 					int taskID = freeTasks[i]; //select task to add
 					numFreeTasks = freeTasks.length;
 					//calculate parent offset
-					int offset = 0;
+                    int offset = 0;
 					for(int di = 0; di < _dependencies[taskID].length; di++) {
-						int tempOffset = clonedS[di][END_TIME];
+					    int tempOffset = clonedS[di][END_TIME];
 						//look at all parents of current task (parent task id is DJ)
 						if(_dependencies[taskID][di] == 1) {
 							//check if that parent is on the same proc
 							if(clonedS[di][PROCESSOR_INDEX] != j && clonedS[di][PROCESSOR_INDEX] != -1) {
 								//if the processor is not on the same
 								tempOffset += _communicationCosts[di][taskID];
-
 							}
-							//if the
 							if(tempOffset > offset) {
 								offset = tempOffset;
 							}
@@ -129,12 +133,16 @@ public class BBAAlgorithm implements Algorithm{
 					int taskStart;
 					if(offset < clonedProcEndTimes[j]) {
 						taskStart = clonedProcEndTimes[j];
-					} else{
+                    } else if (clonedProcEndTimes[j] == 0){
+					    taskStart = offset;
+					    idleTime = offset;
+                    } else
+                    {
 						taskStart = offset;
-						idleTime += offset - clonedProcEndTimes[j];
-					}
+                        idleTime += offset - clonedProcEndTimes[j];
+                    }
 					clonedS[taskID][PROCESSOR_INDEX] = j;
-					clonedS[taskID][START_TIME] = taskStart;
+                    clonedS[taskID][START_TIME] = taskStart;
 					clonedS[taskID][END_TIME] = taskStart + clonedTasks[taskID][PROC_TIME];
 					clonedProcEndTimes[j] = clonedS[taskID][END_TIME];
 					for(int dj = 0; dj < _dependencies.length; dj++) {
@@ -142,26 +150,20 @@ public class BBAAlgorithm implements Algorithm{
 							clonedTasks[dj][NUM_DEP]--;
 						}
 					}
-					previousTask = currentTask; //reset method values
+                    previousTask = currentTask; //reset method values
 					previousProcessor = currentProcessor;
 					currentProcessor = j;
 					currentTask = taskID;
-//					int dataReadyTime = dataReadyTime(currentTask, j, clonedS); //calculate data ready time
-					
-
 					//if cost is lower than B(est) and depth is max, set current best, go back up tree
-				
-					if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime) <= _B && depth == _tasks.length){
+                    if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && depth == _tasks.length){
 						_bestFState = clonedS; // clonedS
-						_B = cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime);
-						return;
+						_B = cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks);
+                        return;
 					}
 					//if cost is lower than B(est) and depth is max, recursive call
-					
-
-					if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime) <= _B && depth <= _tasks.length){
+					if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && depth <= _tasks.length){
 						BBA(currentTask,currentProcessor,previousTask,
-								previousProcessor,numFreeTasks,depth,clonedProcEndTimes, clonedTasks, clonedS);
+								previousProcessor,numFreeTasks,depth,clonedProcEndTimes, clonedTasks, clonedS, idleTime);
 
 					}
 					depth--;
@@ -171,11 +173,6 @@ public class BBAAlgorithm implements Algorithm{
 				}
 			}
 		}
-	}
-	
-	public int[][] getBestState(){
-		
-		return _bestFState;
 	}
 
 	/**
@@ -193,8 +190,7 @@ public class BBAAlgorithm implements Algorithm{
 			}
 			if (!_taskMap.get(node).getParentTasks().isEmpty()){
 				getBottomLevels(_taskMap.get(node).getParentTasks(),
-						currentBottomLevel +
-						_taskMap.get(node).getProcessTime());
+						_taskMap.get(node).getBottomLevel());
 			}
 		}
 	}
@@ -205,17 +201,17 @@ public class BBAAlgorithm implements Algorithm{
 	 * @param s
 	 * @return
 	 */
-	private int cost(int[][] s, int[] procEndTimes, int taskID, int dataReadyTime, int idleTime) {
+	private int cost(int[][] s, int[] procEndTimes, int taskID, int dataReadyTime, int idleTime, int[] freeTasks) {
 		//cost of the initial state
-		int cost = 0;
+		int cost = _fSInit;
 		for (int i = 0; i < procEndTimes.length; i++){
 			if (procEndTimes[i] > cost){
 				cost = procEndTimes[i];
 			}
 		}
 		// get the bottom level of the schedule
-		int scheduleBottomLevel = s[taskID][START_TIME] + _tasks[taskID][BOTTOM_LVL];
-		if (scheduleBottomLevel > cost){
+        int scheduleBottomLevel = s[taskID][START_TIME] + _tasks[taskID][BOTTOM_LVL];
+        if (scheduleBottomLevel > cost){
 			cost = scheduleBottomLevel;
 		}
 		if (idleTime > cost){
@@ -250,7 +246,6 @@ public class BBAAlgorithm implements Algorithm{
 				taskSet.remove(i);
 			}
 		}
-
 		int[] freeTasks = taskSet.stream().mapToInt(Number::intValue).toArray();
 		return freeTasks;
 	}
@@ -261,7 +256,6 @@ public class BBAAlgorithm implements Algorithm{
 	 * class
 	 */
 	private void convertTasks(){
-
 		//initialize _tasks array
 		_tasks = new int[_taskMap.size()][3];
 		//Parse the Task into the 2D array tasks
@@ -270,7 +264,6 @@ public class BBAAlgorithm implements Algorithm{
 			_tasks[taskID][NUM_DEP] = _taskMap.get(taskID).getNumDependency();
 			_tasks[taskID][BOTTOM_LVL] = _taskMap.get(taskID).getBottomLevel();
 		}
-		
 		//initialise _dependencies + _commcosts
 		_dependencies = new int[_taskMap.size()][_taskMap.size()];
 		_communicationCosts = new int[_taskMap.size()][_taskMap.size()];
@@ -281,7 +274,6 @@ public class BBAAlgorithm implements Algorithm{
 				_communicationCosts[parentID][taskID] = _taskMap.get(taskID).getCommunicationCosts(parentID);
 			}
 		}
-
 	}
 
 	/**
