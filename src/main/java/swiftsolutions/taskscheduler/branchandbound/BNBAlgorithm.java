@@ -166,7 +166,7 @@ public class BNBAlgorithm implements Algorithm {
                 dfs(clonedTasks, _bound, clonedSchedule, fto, availableTasks, i);
             }
             return;
-        } else if (isAllIndependent(availableTasks) && (availableTasks.size() == _taskMap.size())) {
+        } else if (isAllIndependent(availableTasks) && (availableTasks.size() > 1)) {
             Comparator<BNBTask> c = (o1, o2) -> {
                 Integer o1Process = o1._procTime;
                 Integer o2Process = o2._procTime;
