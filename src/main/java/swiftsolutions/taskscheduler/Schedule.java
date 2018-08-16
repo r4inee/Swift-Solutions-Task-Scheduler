@@ -9,6 +9,12 @@ import java.util.stream.Collectors;
  */
 public class Schedule {
 
+	public static final int START_TIME = 0;
+	public static final int END_TIME = 1;
+	public static final int PROCCESSOR_INDEX = 2;
+	public static final int EMPTY = -1;
+
+
 	// Map for Task to Pair<ProcessorID, StartTime>
 	private Map<Integer, Pair<Integer, Integer>> _taskToProcessorMap;
 	private int _numProc;
