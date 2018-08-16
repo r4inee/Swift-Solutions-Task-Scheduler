@@ -18,7 +18,6 @@ public class BNBAlgorithm implements Algorithm {
     private int _bound;
     private Set<BNBSchedule> _seenSchedules;
     private Map<Integer, Task> _taskMap;
-    public static int branchCount;
 
     public BNBAlgorithm() {
         _seenSchedules = new HashSet<>();
@@ -61,7 +60,6 @@ public class BNBAlgorithm implements Algorithm {
 
         // Star the algorithm
         dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors), null, new HashSet<>(), -1);
-        System.out.println(branchCount);
         return convertSchedule(_optimalSchedule);
     }
 
@@ -119,7 +117,6 @@ public class BNBAlgorithm implements Algorithm {
      */
     private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule, Queue<BNBTask> fto,
                      Set<BNBTask> free, int lastProc) {
-        branchCount++;
         // If the lower bound of the current schedule is larger than the upper bound, return;
         if (lowerBound(schedule) >= upperBound) {
             return;
@@ -174,7 +171,6 @@ public class BNBAlgorithm implements Algorithm {
             BNBSchedule clonedSchedule = schedule.copy();
             HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
             tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
-            branchCount--;
             dfs(clonedTasks, _bound, clonedSchedule, queue, availableTasks, lastProc);
             return;
         } else if (isFTO(availableTasks, schedule) && (availableTasks.size() == tasks.size())) {
@@ -233,7 +229,6 @@ public class BNBAlgorithm implements Algorithm {
                     BNBSchedule clonedSchedule = schedule.copy();
                     HashMap<Integer, BNBTask> clonedTasks = new HashMap<>();
                     tasks.forEach((Integer integer, BNBTask t) -> clonedTasks.put(integer, t.copy()));
-                    branchCount--;
                     dfs(clonedTasks, _bound, clonedSchedule, fto, availableTasks, lastProc);
                     return;
                 }

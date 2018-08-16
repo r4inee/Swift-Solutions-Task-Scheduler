@@ -16,6 +16,7 @@ public class BBAAlgorithm implements Algorithm{
 	private int[][] _bestFState; // output schedule
 	private int[][] _communicationCosts; // row represents the parent, col represents the child, value is the cost
 	private Map<Integer, Task> _taskMap;
+	private Set<Cache> _seenSchedules;
 	private int _B;
 	private int _fSInit;
 
@@ -30,7 +31,9 @@ public class BBAAlgorithm implements Algorithm{
 	public static final int NUM_DEP = 1;
 	public static final int BOTTOM_LVL = 2;
 
-	public BBAAlgorithm(){}
+	public BBAAlgorithm(){
+		_seenSchedules = new HashSet<>();
+	}
 
 	/**
 	 * Overrides Algorithm setProcessors
@@ -65,6 +68,7 @@ public class BBAAlgorithm implements Algorithm{
 		// need to make the processor value on initial schedule -1;
 		for (int i = 0; i < initialSchedule.length; i++){
 			initialSchedule[i][PROCESSOR_INDEX] = EMPTY;
+			initialSchedule[i][START_TIME] = EMPTY;
 		}
 		_B = 0; // Max int
         int maxBotLevel = 0;
@@ -182,6 +186,13 @@ public class BBAAlgorithm implements Algorithm{
                 }
             }
 
+			// Scheduling Caching
+			Cache cache = new Cache(_numProcessors, s);
+			if (_seenSchedules.contains(cache)) {
+				return;
+			} else {
+				_seenSchedules.add(cache);
+			}
 			for (int i = 0; i < freeTasks.length; i++) {
 				for (int j = 0; j < _numProcessors; j++) { //add the task to all processors
                     if (j > getFirstEmptyProc(procEndTimes)) {
