@@ -4,6 +4,8 @@ import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithm;
 import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithmVisual;
 import swiftsolutions.taskscheduler.branchandboundastar.BBAAlgorithm;
+import swiftsolutions.taskscheduler.branchandboundastarparallel.BBAAlgorithmParallel;
+
 
 /**
  * Enum of algorithms that we may want to use for scheduling
@@ -11,7 +13,9 @@ import swiftsolutions.taskscheduler.branchandboundastar.BBAAlgorithm;
 public enum Algorithms {
     BRANCH_AND_BOUND(new BNBAlgorithm(), "bnb-simple", false),
     BRANCH_AND_BOUND_A_STAR(new BBAAlgorithm(), "bba-simple", false),
-    BRANCH_AND_BOUND_VISUAL(new BNBAlgorithmVisual(), "bnb-visual", false);
+    BRANCH_AND_BOUND_VISUAL(new BNBAlgorithmVisual(), "bnb-visual", false),
+    BRANCH_AND_BOUND_A_START_PARALLEL(new BBAAlgorithmParallel(), "bba-parallel", true);
+
 
     private Algorithm _algorithm;
     private String _flag;
