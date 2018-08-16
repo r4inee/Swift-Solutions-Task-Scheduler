@@ -183,7 +183,7 @@
                                           <Insets left="20.0" top="17.0" />
                                        </HBox.margin>
                                     </ImageView>
-                                    <Text fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" text="CPU Usage">
+                                    <Text fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" text="Process Memory Usage (%)">
                                        <font>
                                           <Font size="15.0" />
                                        </font>
@@ -220,7 +220,7 @@
                                           <Insets left="20.0" top="17.0" />
                                        </HBox.margin>
                                     </ImageView>
-                                    <Text fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" text="Memory Usage">
+                                    <Text fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" text="CPU Usage (%)">
                                        <font>
                                           <Font size="15.0" />
                                        </font>

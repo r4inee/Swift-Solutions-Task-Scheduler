@@ -1,6 +1,5 @@
 package swiftsolutions.taskscheduler.branchandbound;
 
-import swiftsolutions.interfaces.output.OutputManager;
 import swiftsolutions.interfaces.taskscheduler.VisualAlgorithm;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
@@ -19,16 +18,10 @@ public class BNBAlgorithmVisual extends VisualAlgorithm {
     private int _bound;
     private Set<BNBSchedule> _seenSchedules;
     private Map<Integer, Task> _taskMap;
-    private OutputManager _outputManager;
     private volatile int _branches;
     private volatile int _validSchedules;
     private volatile int _pruned;
     private volatile boolean _done;
-
-    @Override
-    public boolean isDone() {
-        return _done;
-    }
 
     public BNBAlgorithmVisual() {
         _seenSchedules = new HashSet<>();
@@ -54,16 +47,6 @@ public class BNBAlgorithmVisual extends VisualAlgorithm {
         _taskMap = tasks;
 
         return null;
-    }
-
-    @Override
-    public int getValidSchedules() {
-        return _validSchedules;
-    }
-
-    @Override
-    public int getUpperbound() {
-        return _bound;
     }
 
     /**
@@ -111,16 +94,6 @@ public class BNBAlgorithmVisual extends VisualAlgorithm {
         }
     }
 
-    @Override
-    public int[][] getSchedule() {
-        return _optimalSchedule == null ? null : _optimalSchedule._schedule;
-    }
-
-    @Override
-    public int getProcessors() {
-        return _numProcessors;
-    }
-
     /**
      * Recursive depth-first search branch and bound algorithm.
      * @param tasks tasks that have not been scheduled
@@ -129,10 +102,14 @@ public class BNBAlgorithmVisual extends VisualAlgorithm {
      */
     private void dfs(HashMap<Integer, BNBTask> tasks, long upperBound, BNBSchedule schedule, Queue<BNBTask> fto,
                      Set<BNBTask> free, int lastProc) {
+
         _branches++;
+
+        // Algorithm has been manually stopped
         if (isInterrupted()) {
             return;
         }
+
         if (lowerBound(schedule) >= upperBound) {
             return;
         }
@@ -307,15 +284,9 @@ public class BNBAlgorithmVisual extends VisualAlgorithm {
         return lowerBound;
     }
 
-    @Override
-    public int getPruned() {
-        return _pruned;
-    }
-
-    public int getBranches() {
-        return this._branches;
-    }
-
+    /**
+     * Starts the algorithm
+     */
     @Override
     public void run() {
         super.run();
@@ -341,6 +312,71 @@ public class BNBAlgorithmVisual extends VisualAlgorithm {
         dfs(convertedTasks, _bound, new BNBSchedule(convertedTasks.size(), _numProcessors), null, new HashSet<>(), -1);
         _done = true;
     }
+
+
+    /**
+     * See VisualAlgorithm#getPruned()
+     * @return
+     */
+    @Override
+    public int getPruned() {
+        return _pruned;
+    }
+
+    /**
+     * See VisualAlgorithm#getBranches()
+     * @return
+     */
+    @Override
+    public int getBranches() {
+        return this._branches;
+    }
+
+    /**
+     * See VisualAlgorithm#getSchedule()
+     * @return
+     */
+    @Override
+    public int[][] getSchedule() {
+        return _optimalSchedule == null ? null : _optimalSchedule._schedule;
+    }
+
+    /**
+     * See VisualAlgorithm#getProcessors()
+     * @return
+     */
+    @Override
+    public int getProcessors() {
+        return _numProcessors;
+    }
+
+    /**
+     * See VisualAlgorithm#getValidSchedules()
+     * @return
+     */
+    @Override
+    public int getValidSchedules() {
+        return _validSchedules;
+    }
+
+    /**
+     * See VisualAlgorithm#getUpperbound()
+     * @return
+     */
+    @Override
+    public int getUpperbound() {
+        return _bound;
+    }
+
+    /**
+     * See VisualAlgorithm#isDone()
+     * @return
+     */
+    @Override
+    public boolean isDone() {
+        return _done;
+    }
+
 
 
 }
