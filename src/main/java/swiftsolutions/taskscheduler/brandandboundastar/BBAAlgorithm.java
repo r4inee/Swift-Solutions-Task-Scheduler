@@ -15,6 +15,7 @@ public class BBAAlgorithm implements Algorithm{
 	private int[][] _dependencies; // row represents child, col represents parent, value 1 represents is parent 0 if not
 	private int[][] _bestFState; // output schedule
 	private int[][] _communicationCosts; // row represents the parent, col represents the child, value is the cost
+	private int[][] _nodeEquivalence;
 	private Map<Integer, Task> _taskMap;
 	private Set<Cache> _seenSchedules;
 	private int _B;
@@ -78,6 +79,15 @@ public class BBAAlgorithm implements Algorithm{
 			    maxBotLevel = _taskMap.get(task).getBottomLevel();
             }
 		}
+		_nodeEquivalence = new int[tasks.size()][tasks.size()];
+		for (int i = 0; i < tasks.size(); i++) {
+			for (int j = 0; j < tasks.size(); j++) {
+				if (nodeEquivalence(i, j)) {
+					_nodeEquivalence[i][j] = 1;
+				}
+			}
+		}
+
         _fSInit = Math.max(_B/_numProcessors, maxBotLevel);
         int idleTime = 0;
 		BBA(EMPTY,EMPTY,EMPTY,EMPTY,
@@ -210,7 +220,7 @@ public class BBAAlgorithm implements Algorithm{
 					currentTask = taskID;
                     // Node Equivalence
 					if (previousTask != EMPTY) {
-						if (nodeEquivalence(previousTask, currentTask)) {
+						if (_nodeEquivalence[previousTask][currentTask] == 1) {
 							break;
 						}
 					}
@@ -448,6 +458,7 @@ public class BBAAlgorithm implements Algorithm{
 				taskSet.remove(i);
 			}
 		}
+
 		int[] freeTasks = taskSet.stream().mapToInt(Number::intValue).toArray();
 		return freeTasks;
 	}
