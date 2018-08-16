@@ -8,30 +8,32 @@ import swiftsolutions.util.Pair;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class BBAAlgorithm implements Algorithm {
-    private int _numProcessors;
+public class BBAAlgorithm implements Algorithm{
+	private int _numProcessors;
 
-    private int[][] _tasks; // row represents the task, cols represent { proc time, number of dependencies, bottom level}
-    private int[][] _dependencies; // row represents child, col represents parent, value 1 represents is parent 0 if not
-    private int[][] _bestFState; // output schedule
-    private int[][] _communicationCosts; // row represents the parent, col represents the child, value is the cost
-    private Map<Integer, Task> _taskMap;
-    private int _B;
-    private int _fSInit;
+	private int[][] _tasks; // row represents the task, cols represent { proc time, number of dependencies, bottom level}
+	private int[][] _dependencies; // row represents child, col represents parent, value 1 represents is parent 0 if not
+	private int[][] _bestFState; // output schedule
+	private int[][] _communicationCosts; // row represents the parent, col represents the child, value is the cost
+	private Map<Integer, Task> _taskMap;
+	private Set<Cache> _seenSchedules;
+	private int _B;
+	private int _fSInit;
 
-    public static final int EMPTY = -1;
-    public static final int SCHEDULE_COL_SIZE = 3;
-    // used for schedules in general (including _bestFState)
-    public static final int START_TIME = 0;
-    public static final int END_TIME = 1;
-    public static final int PROCESSOR_INDEX = 2;
-    // used for _tasks
-    public static final int PROC_TIME = 0;
-    public static final int NUM_DEP = 1;
-    public static final int BOTTOM_LVL = 2;
+	public static final int EMPTY = -1;
+	public static final	int SCHEDULE_COL_SIZE = 3;
+	// used for schedules in general (including _bestFState)
+	public static final int START_TIME = 0;
+	public static final int END_TIME = 1;
+	public static final int PROCESSOR_INDEX = 2;
+	// used for _tasks
+	public static final int PROC_TIME = 0;
+	public static final int NUM_DEP = 1;
+	public static final int BOTTOM_LVL = 2;
 
-    public BBAAlgorithm() {
-    }
+	public BBAAlgorithm(){
+		_seenSchedules = new HashSet<>();
+	}
 
     /**
      * Overrides Algorithm setProcessors
@@ -44,32 +46,32 @@ public class BBAAlgorithm implements Algorithm {
         _numProcessors = processors;
     }
 
-    /**
-     * Overrides Algorithm execute
-     * See Algorithm#execute()
-     *
-     * @param tasks tasks that will be scheduled
-     * @return
-     */
-    @Override
-    public Schedule execute(Map<Integer, Task> tasks) {
-        _taskMap = tasks;
-        Set<Task> leafs = tasks.values() //find all the leaf nodes
-                .stream()
-                .filter((Task task) -> task.getChildTasks().size() == 0)
-                .collect(Collectors.toSet());
-        for (Task leaf : leafs) { //Compute the bottom levels for the nodes
-            leaf.updateBottomLevel(leaf.getProcessTime());
-            getBottomLevels(leaf.getParentTasks(), leaf.getProcessTime());
-        }
-        convertTasks(); //converts the tasks into the 2D array format
-        int[] procEndTimes = new int[_numProcessors]; // create a 2D array with row size number of processors, 1 col
-        int[][] initialSchedule = new int[_tasks.length][SCHEDULE_COL_SIZE];
-        // need to make the processor value on initial schedule -1;
-        for (int i = 0; i < initialSchedule.length; i++) {
-            initialSchedule[i][PROCESSOR_INDEX] = EMPTY;
-        }
-        _B = 0; // Max int
+	/**
+	 * Overrides Algorithm execute
+	 * See Algorithm#execute()
+	 * @param tasks tasks that will be scheduled
+	 * @return
+	 */
+	@Override
+	public Schedule execute(Map<Integer, Task> tasks) {
+		_taskMap = tasks;
+		Set<Task> leafs = tasks.values() //find all the leaf nodes
+				.stream()
+				.filter((Task task) -> task.getChildTasks().size() == 0)
+				.collect(Collectors.toSet());
+		for (Task leaf : leafs) { //Compute the bottom levels for the nodes
+			leaf.updateBottomLevel(leaf.getProcessTime());
+			getBottomLevels(leaf.getParentTasks(),leaf.getProcessTime());
+		}
+		convertTasks(); //converts the tasks into the 2D array format
+		int[] procEndTimes = new int[_numProcessors]; // create a 2D array with row size number of processors, 1 col
+		int[][] initialSchedule = new int[_tasks.length][SCHEDULE_COL_SIZE];
+		// need to make the processor value on initial schedule -1;
+		for (int i = 0; i < initialSchedule.length; i++){
+			initialSchedule[i][PROCESSOR_INDEX] = EMPTY;
+			initialSchedule[i][START_TIME] = EMPTY;
+		}
+		_B = 0; // Max int
         int maxBotLevel = 0;
         for (int task : _taskMap.keySet()) {
             _B += _taskMap.get(task).getProcessTime();
@@ -185,6 +187,13 @@ public class BBAAlgorithm implements Algorithm {
                 }
             }
 
+			// Scheduling Caching
+			Cache cache = new Cache(_numProcessors, s);
+			if (_seenSchedules.contains(cache)) {
+				return;
+			} else {
+				_seenSchedules.add(cache);
+			}
 			for (int i = 0; i < freeTasks.length; i++) {
 				for (int j = 0; j < _numProcessors; j++) { //add the task to all processors
                     if (j > getFirstEmptyProc(procEndTimes)) {
