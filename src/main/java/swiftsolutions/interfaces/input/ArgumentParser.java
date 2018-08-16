@@ -1,6 +1,7 @@
 package swiftsolutions.interfaces.input;
 
 import swiftsolutions.cli.options.CoresOption;
+import swiftsolutions.cli.options.HelpOption;
 import swiftsolutions.cli.options.OutputOption;
 import swiftsolutions.cli.options.VisualizeOption;
 import swiftsolutions.exceptions.ArgumentFormatException;
@@ -20,5 +21,7 @@ public interface ArgumentParser  {
     public VisualizeOption getVisualizeOption();
 
     public OutputOption getOutputOption();
+
+    public HelpOption getHelpOption();
 
 }

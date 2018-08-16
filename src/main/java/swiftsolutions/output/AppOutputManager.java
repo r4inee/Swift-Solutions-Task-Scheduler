@@ -24,6 +24,7 @@ public class AppOutputManager implements swiftsolutions.interfaces.output.Output
 
     @Override
     public void send(OutputMessage message) {
+        this._observable.setChanged();
         this._observable.notifyObservers(message);
     }
 

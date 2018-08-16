@@ -7,7 +7,8 @@ public enum OutputType {
     ERROR(TextColor.RED),
     STATUS(TextColor.BLUE),
     DEBUG(TextColor.PURPLE),
-    SUCCESS(TextColor.GREEN);
+    SUCCESS(TextColor.GREEN),
+    HELP(TextColor.YELLOW);
 
     private TextColor _color;
 

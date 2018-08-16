@@ -65,41 +65,6 @@ public class CLIOptionTest {
 
     /**
      * Test that a valid argument passed to verify()
-     * for DirectoryOption does not throw an
-     * ArgumentFormatException
-     */
-    @Test
-    public void testDirectoryValidVerify(){
-        DirectoryOption directoryOption = new DirectoryOption();
-        ArrayList<String> input = new ArrayList<>();
-        input.add("foo");
-        try {
-            directoryOption.verifyArgs(input);
-        } catch (ArgumentFormatException e) {
-            fail();
-        }
-    }
-
-    /**
-     * Test that an invalid argument passed to verify()
-     * for DirectoryOption throws an ArgumentFormationException
-     * with the correct message
-     */
-    @Test
-    public void testDirectoryInvalidVerify(){
-        DirectoryOption directoryOption = new DirectoryOption();
-        ArrayList<String> input = new ArrayList<>();
-        input.add("foo");
-        input.add("boo");
-        try {
-            directoryOption.verifyArgs(input);
-        } catch (ArgumentFormatException e) {
-            assertEquals("Number of arguments", e.getMessage());
-        }
-    }
-
-    /**
-     * Test that a valid argument passed to verify()
      * for OutputOption does not throw an
      * ArgumentFormatException
      */
@@ -138,10 +103,10 @@ public class CLIOptionTest {
      */
     @Test
     public void testVerboseValidVerify(){
-        VerboseOption verboseOption = new VerboseOption();
+        HelpOption helpOption = new HelpOption();
         ArrayList<String> input = new ArrayList<>();
         try {
-            verboseOption.verifyArgs(input);
+            helpOption.verifyArgs(input);
         } catch (ArgumentFormatException e) {
             fail();
         }
@@ -154,11 +119,11 @@ public class CLIOptionTest {
      */
     @Test
     public void testVerboseInvalidVerify(){
-        VerboseOption verboseOption = new VerboseOption();
+        HelpOption helpOption = new HelpOption();
         ArrayList<String> input = new ArrayList<>();
         input.add("foo");
         try {
-            verboseOption.verifyArgs(input);
+            helpOption.verifyArgs(input);
         } catch (ArgumentFormatException e) {
             assertEquals("Number of arguments", e.getMessage());
         }

@@ -4,14 +4,20 @@ import swiftsolutions.exceptions.ArgumentFormatException;
 
 import java.util.ArrayList;
 
-public class DirectoryOption extends  CLIOption<String> {
-    public DirectoryOption() {
-        super("dir", 1);
+public class HelpOption extends CLIOption<Boolean>{
+
+    public HelpOption() {
+        super("h", 0);
     }
 
+    /**
+     * Verifies the number of arguments is correct
+     * @param args
+     * @throws ArgumentFormatException
+     */
     @Override
     public void verifyArgs(ArrayList<String> args) throws ArgumentFormatException {
         super.checkNumArgs(args);
-        this._args = args.get(0);
+        _args = true;
     }
 }
