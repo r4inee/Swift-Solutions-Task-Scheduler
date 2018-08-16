@@ -172,43 +172,43 @@ public class ValidationTest {
         assertEquals(maxEndTime, 50);
     }
 
-//    @Test
-//    public void testNode11OutTree() {
-//        DOTInputParser parser = new DOTInputParser();
-//        Map<Integer, Task> taskMap = new HashMap<>();
-//        try {
-//            taskMap =  parser.parse("src/test/resources/test_graphs/Nodes_11_OutTree.dot");
-//        } catch (InputException e) {
-//            e.printStackTrace();
-//        }
-//
-//        Algorithm algorithm = new BBAAlgorithm();
-//        algorithm.setProcessors(2);
-//        Schedule outputSchedule = algorithm.execute(taskMap);
-//
-//        Map<Integer, Pair<Integer, Integer>> schedule = outputSchedule.getTaskToProcessorMap();
-//        int maxEndTime = 0;
-//        for (Integer task : schedule.keySet()) {
-//            int endTime = schedule.get(task).getB() + taskMap.get(task).getProcessTime();
-//            if (endTime > maxEndTime) {
-//                maxEndTime = endTime;
-//            }
-//        }
-//        assertEquals(maxEndTime, 350);
-//
-//        algorithm = new BBAAlgorithm();
-//        algorithm.setProcessors(4);
-//        outputSchedule = algorithm.execute(taskMap);
-//
-//        schedule = outputSchedule.getTaskToProcessorMap();
-//        maxEndTime = 0;
-//        for (Integer task : schedule.keySet()) {
-//            int endTime = schedule.get(task).getB() + taskMap.get(task).getProcessTime();
-//            if (endTime > maxEndTime) {
-//                maxEndTime = endTime;
-//            }
-//        }
-//        assertEquals(maxEndTime, 227);
-//    }
+    @Test
+    public void testNode11OutTree() {
+        DOTInputParser parser = new DOTInputParser();
+        Map<Integer, Task> taskMap = new HashMap<>();
+        try {
+            taskMap =  parser.parse("src/test/resources/test_graphs/Nodes_11_OutTree.dot");
+        } catch (InputException e) {
+            e.printStackTrace();
+        }
+
+        Algorithm algorithm = new BBAAlgorithm();
+        algorithm.setProcessors(2);
+        Schedule outputSchedule = algorithm.execute(taskMap);
+
+        Map<Integer, Pair<Integer, Integer>> schedule = outputSchedule.getTaskToProcessorMap();
+        int maxEndTime = 0;
+        for (Integer task : schedule.keySet()) {
+            int endTime = schedule.get(task).getB() + taskMap.get(task).getProcessTime();
+            if (endTime > maxEndTime) {
+                maxEndTime = endTime;
+            }
+        }
+        assertEquals(maxEndTime, 350);
+
+        algorithm = new BBAAlgorithm();
+        algorithm.setProcessors(4);
+        outputSchedule = algorithm.execute(taskMap);
+
+        schedule = outputSchedule.getTaskToProcessorMap();
+        maxEndTime = 0;
+        for (Integer task : schedule.keySet()) {
+            int endTime = schedule.get(task).getB() + taskMap.get(task).getProcessTime();
+            if (endTime > maxEndTime) {
+                maxEndTime = endTime;
+            }
+        }
+        assertEquals(maxEndTime, 227);
+    }
 
 }

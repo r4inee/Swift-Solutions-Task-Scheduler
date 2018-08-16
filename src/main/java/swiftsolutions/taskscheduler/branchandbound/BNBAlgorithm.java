@@ -149,9 +149,6 @@ public class BNBAlgorithm implements Algorithm {
                 .collect(Collectors.toSet());
 
         if ((fto != null) && (!fto.isEmpty())) {
-            if (fto.size() != availableTasks.size()) {
-                return;
-            }
             // When the schedule is in FTO automatically poll for the next task in the queue and schedule it.
             BNBTask task = fto.poll();
             for (int i = 0; i < _numProcessors; i++) {
@@ -211,27 +208,23 @@ public class BNBAlgorithm implements Algorithm {
             Queue<BNBTask> queue = new PriorityQueue<>(availableTasks.size(), c);
             queue.addAll(availableTasks);
             if (queue.size() > 1) {
-                List<BNBTask> ftoTask = new ArrayList<>();
+                Queue<BNBTask> queue2 = new PriorityQueue<>((o1, o2) -> {
+                    Integer outO1 = 0;
+                    Integer outO2 = 0;
+                    if (o1._children.length == 1) {
+                        outO1 = tasks.get(o1._children[0])._commCost[o1._id];
+                    }
+                    if (o2._children.length == 1) {
+                        outO2 = tasks.get(o2._children[0])._commCost[o2._id];
+                    }
+                    return outO2.compareTo(outO1);
+                });
                 boolean order = true;
-                for (int j = 0; j < queue.size(); j++) {
-                    ftoTask.add(queue.poll());
-                    if (ftoTask.size() > 1) {
-                        BNBTask o1 = ftoTask.get(j - 1);
-                        BNBTask o2 = ftoTask.get(j);
-
-                        int outO1 = 0;
-                        int outO2 = 0;
-                        if (o1._children.length == 1) {
-                            outO1 = tasks.get(o1._children[0])._commCost[o1._id];
-                        }
-                        if (o2._children.length == 1) {
-                            outO2 = tasks.get(o2._children[0])._commCost[o2._id];
-                        }
-
-                        if (outO2 < outO1) {
-                            order = false;
-                            break;
-                        }
+                queue2.addAll(availableTasks);
+                for (int i = 0; i < availableTasks.size(); i++){
+                    if (queue.poll()._id != queue2.poll()._id) {
+                        order = false;
+                        break;
                     }
                 }
                 if (order) {
