@@ -18,28 +18,26 @@ public class CLIArgumentParser implements ArgumentParser {
     private CoresOption _coresOption;
     private VisualizeOption _visualizeOption;
     private OutputOption _outputOption;
-    private DirectoryOption _directoryOption;
-    private VerboseOption _verboseOption;
+    private HelpOption _helpOption;
     private ArrayList<CLIOption> _options;
 
     public CLIArgumentParser() {
         // Initialize active options
         _coresOption = new CoresOption();
         _visualizeOption = new VisualizeOption();
-        _directoryOption = new DirectoryOption();
-        _verboseOption = new VerboseOption();
+        _helpOption = new HelpOption();
         _outputOption = new OutputOption();
 
         _options = new ArrayList<>();
         _options.add(_coresOption);
         _options.add(_visualizeOption);
         _options.add(_outputOption);
-        _options.add(_directoryOption);
-        _options.add(_verboseOption);
+        _options.add(_helpOption);
     }
 
     // Parse arguments
     public void parse(String[] args) throws ArgumentFormatException {
+
         if (args.length < 2) {
             throw new ArgumentFormatException(
                     "Less arguments than expected, try using -h for help.");
@@ -115,6 +113,7 @@ public class CLIArgumentParser implements ArgumentParser {
         return _file;
     }
 
+    @Override
     public String getOutputFile() {
         return _outputFile;
     }
@@ -123,6 +122,7 @@ public class CLIArgumentParser implements ArgumentParser {
      * Get number of processors to schedule
      * @return
      */
+    @Override
     public int getProcessors() {
         return _processors;
     }
@@ -131,6 +131,7 @@ public class CLIArgumentParser implements ArgumentParser {
      * If parallel, get number of cores to use
      * @return
      */
+    @Override
     public CoresOption getCoresOption() {
         return _coresOption;
     }
@@ -139,6 +140,7 @@ public class CLIArgumentParser implements ArgumentParser {
      * Check whether the client wants to visualize the scheduling process
      * @return
      */
+    @Override
     public VisualizeOption getVisualizeOption() {
         return _visualizeOption;
     }
@@ -147,6 +149,7 @@ public class CLIArgumentParser implements ArgumentParser {
      * Check whether the client wants to customize the output location
      * @return
      */
+    @Override
     public OutputOption getOutputOption() {
         return _outputOption;
     }
@@ -155,7 +158,9 @@ public class CLIArgumentParser implements ArgumentParser {
      * Check whether the client wants debug messages
      * @return
      */
-    public VerboseOption getVerboseOption() {
-        return _verboseOption;
+    @Override
+    public HelpOption getHelpOption() {
+        return _helpOption;
     }
+
 }

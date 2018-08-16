@@ -63,6 +63,22 @@ public class Scheduler {
     }
 
     public void start(String args[]) {
+
+        if (args.length == 1 && args[0].equals("-h")) {
+            _outputManager.send(new OutputMessage(OutputType.HELP,
+                    "java −jar scheduler.jar INPUT.dot P [OPTION]\n" +
+                            "INPUT.dot\ta task graph with integer weights in dot format\n" +
+                            "P        \t number of processors to schedule the INPUT graph on\n" +
+                            "\n" +
+                            "Optional :\n" +
+                            "−p N    \tuse N cores for execution in parallel (default is sequential)\n" +
+                            "−v      \tvisualise the search\n" +
+                            "−o OUPUT\toutput file is named OUTPUT (default is INPUT−output.dot)\n"
+            ));
+            return;
+        }
+
+
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Parsing arguments..."));
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Starting program..."));
 
@@ -99,6 +115,7 @@ public class Scheduler {
                 _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND, numProcessors, numCores);
 
         if (_argumentParser.getVisualizeOption().getArgs()) {
+            this._outputManager.send(new OutputMessage(OutputType.STATUS, "Starting GUI..."));
             PlatformImpl.startup(() ->{
                 GUI gui = new GUI();
                 Stage stage = new Stage();
@@ -110,6 +127,7 @@ public class Scheduler {
                 gui.setAlgorithmThread((VisualAlgorithm) _algorithm);
                 gui.setScheduler(this);
             });
+            this._outputManager.send(new OutputMessage(OutputType.SUCCESS, "GUI Started!"));
         } else {
             executeAlgorithm();
         }
@@ -120,6 +138,8 @@ public class Scheduler {
     }
 
     public void executeAlgorithm() {
+        this._outputManager.send(new OutputMessage(OutputType.STATUS, "Executing algorithm..."));
+
         Schedule outputSchedule = _algorithm.execute(_offsetTaskMap);
 
         long end = System.currentTimeMillis();
@@ -131,14 +151,13 @@ public class Scheduler {
         _outputManager.send(new OutputMessage(OutputType.DEBUG,
                 "Output Graph: \n" + outputSchedule.getOutputString()));
 
-        this._outputManager.send(new OutputMessage(OutputType.STATUS, "Writing schedule to file..."));
-
         writeOutput(outputSchedule);
 
         _outputManager.send(new OutputMessage(OutputType.SUCCESS, "Exiting program..."));
     }
 
     public void writeOutput(Schedule schedule) {
+        this._outputManager.send(new OutputMessage(OutputType.STATUS, "Writing schedule to file..."));
         try {
             if (_argumentParser.getOutputFile() != null) {
                 _outputWriter.serialize(_argumentParser.getOutputFile(), schedule, _offsetTaskMap);
@@ -148,6 +167,7 @@ public class Scheduler {
         } catch (OutputException e) {
             _outputManager.send(new OutputMessage(OutputType.DEBUG, e.getMessage()));
         }
+        this._outputManager.send(new OutputMessage(OutputType.SUCCESS, "File successfully written!"));
     }
 
 }

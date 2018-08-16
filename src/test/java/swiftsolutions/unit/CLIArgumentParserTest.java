@@ -124,7 +124,7 @@ public class CLIArgumentParserTest {
      */
     @Test
     public void testCorrectFieldValues(){
-        String[] input = new String[] {"foo", "1", "-p", "2", "-dir", "foo", "-o", "foo", "-verbose", "-v"};
+        String[] input = new String[] {"foo", "1", "-p", "2", "-dir", "foo", "-o", "foo", "-h", "-v"};
         try{
             _cliArgumentParser.parse(input);
         } catch (ArgumentFormatException e) {
@@ -136,6 +136,6 @@ public class CLIArgumentParserTest {
         assertEquals(1,_cliArgumentParser.getProcessors());
         assertEquals("foo",_cliArgumentParser.getOutputOption().getArgs());
         assertTrue(_cliArgumentParser.getVisualizeOption().getArgs());
-        assertTrue(_cliArgumentParser.getVerboseOption().getArgs());
+        assertTrue(_cliArgumentParser.getHelpOption().getArgs());
     }
 }
