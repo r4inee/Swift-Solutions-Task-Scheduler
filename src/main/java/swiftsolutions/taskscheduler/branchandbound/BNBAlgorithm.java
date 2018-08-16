@@ -177,7 +177,7 @@ public class BNBAlgorithm implements Algorithm {
             branchCount--;
             dfs(clonedTasks, _bound, clonedSchedule, queue, availableTasks, lastProc);
             return;
-        } else if (isFTO(availableTasks, schedule)) {
+        } else if (isFTO(availableTasks, schedule) && (availableTasks.size() == tasks.size())) {
             Comparator<BNBTask> c = (o1, o2) -> {
                 Integer parentO1DRT = 0;
                 Integer parentO2DRT = 0;

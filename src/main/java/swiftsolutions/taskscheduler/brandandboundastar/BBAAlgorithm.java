@@ -76,7 +76,7 @@ public class BBAAlgorithm implements Algorithm{
 		}
         _fSInit = Math.max(_B/_numProcessors, maxBotLevel);
         int idleTime = 0;
-		BBA(0,0,-1,0,
+		BBA(EMPTY,EMPTY,EMPTY,EMPTY,
 				_tasks.length, 0, procEndTimes, _tasks, initialSchedule, idleTime); //Call the recursion algorithm
         return convertSchedule(_bestFState);
 	}
@@ -194,12 +194,21 @@ public class BBAAlgorithm implements Algorithm{
                             continue;
                         }
                     }
+					int taskID = freeTasks[i];
+					currentProcessor = j;
+					currentTask = taskID;
+                    // Node Equivalence
+					if (previousTask != EMPTY) {
+						if (nodeEquivalence(previousTask, currentTask)) {
+							break;
+						}
+					}
 
 					depth++;
 					int[][] clonedS = copySchedule(s);
 					int[] clonedProcEndTimes = Arrays.copyOf(procEndTimes, procEndTimes.length); //copy Processor end times
 					int[][] clonedTasks = copyTasks(tasks);
-					int taskID = freeTasks[i]; //select task to add
+					 //select task to add
 					numFreeTasks = freeTasks.length;
 					//calculate parent offset
                     int offset = 0;
@@ -237,10 +246,8 @@ public class BBAAlgorithm implements Algorithm{
 							clonedTasks[dj][NUM_DEP]--;
 						}
 					}
-                    previousTask = currentTask; //reset method values
-                    previousProcessor = currentProcessor;
-                    currentProcessor = j;
-					currentTask = taskID;
+					previousTask = previousTask; //reset method values
+					previousProcessor = previousProcessor;
 					numFreeTasks++;
 					//if cost is lower than B(est) and depth is max, set current best, go back up tree
                     if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && depth == _tasks.length){
@@ -546,4 +553,26 @@ public class BBAAlgorithm implements Algorithm{
         }
         return true;
     }
+
+    private boolean nodeEquivalence(int taskA, int taskB) {
+		for (int i = 0; i < _dependencies.length; i++) {
+			if (_dependencies[taskA][i] == 1) {
+				if (_dependencies[taskB][i] != 1) {
+					return false;
+				}
+				if (_communicationCosts[i][taskA] != _communicationCosts[i][taskB]) {
+					return false;
+				}
+			}
+			if (_dependencies[i][taskA] == 1) {
+				if (_dependencies[i][taskB] != 1) {
+					return false;
+				}
+				if (_communicationCosts[taskA][i] != _communicationCosts[taskB][i]) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
 }
