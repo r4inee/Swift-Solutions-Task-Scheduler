@@ -121,12 +121,16 @@ public class BBAAlgorithm implements Algorithm {
         }
         // If the task are either all independent or in fixed task order, start the algorithm and will order in BBA.
         int[] fTask = free(initialSchedule, _tasks);
-        if ((isAllIndependent(fTask)) || ((isFTO(fTask, initialSchedule)) && (fTask.length == _tasks.length))) {
-            BBA(EMPTY, EMPTY, tasks.size(), 0, procEndTimes, _tasks, initialSchedule, idleTime);
+        if ((isAllIndependent(fTask)) || (fTask.length == (_tasks.length - 1))) {
+            BBA(EMPTY, EMPTY, tasks.size(), 0, procEndTimes, _tasks, initialSchedule, idleTime, true);
         } else {
-            // Complete an FTO to find initial bound.
-            FTO(freeTasks,0, procEndTimes, _tasks, initialSchedule, idleTime);
-            BBA(EMPTY, EMPTY, fTask.length, 0, procEndTimes, _tasks, initialSchedule, idleTime); //Call the recursion algorithm
+            if ((fTask.length == 1) && ((_taskMap.get(fTask[0]).getChildTasks().size() == (_tasks.length - 1)))) {
+                BBA(EMPTY, EMPTY, fTask.length, 0, procEndTimes, _tasks, initialSchedule, idleTime, true);
+            } else {
+                // Complete an FTO to find initial bound.
+                FTO(freeTasks,0, procEndTimes, _tasks, initialSchedule, idleTime);
+                BBA(EMPTY, EMPTY, fTask.length, 0, procEndTimes, _tasks, initialSchedule, idleTime, false); //Call the recursion algorithm
+            }
         }
         return convertSchedule(_bestFState);
     }
@@ -139,7 +143,8 @@ public class BBAAlgorithm implements Algorithm {
      * @param numFreeTasks The previous number of available tasks
      * @param depth The current recursive depth
      */
-    private void BBA(int previousTask, int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s, int idleTime) {
+    private void BBA(int previousTask, int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s,
+                     int idleTime, boolean fto) {
         // The current list of available tasks.
         int[] freeTasks = free(s, tasks);
         if (freeTasks.length != 0) {
@@ -161,7 +166,10 @@ public class BBAAlgorithm implements Algorithm {
                 }
                 FTO(orderedTasks,0, procEndTimes, tasks, s, idleTime);
                 return;
-            } else if (isFTO(freeTasks, s) && (freeTasks.length == numFreeTasks)) {
+            } else if ((isFTO(freeTasks, s) && (freeTasks.length == numFreeTasks)) || (fto)) {
+                if (fto) {
+                    freeTasks = _taskMap.keySet().stream().mapToInt(Number::intValue).toArray();
+                }
                 // Check if the tasks are in FTO and order by non-decreasing DRT then by non-increasing out edge costs.
                 Comparator<Integer> c = (o1, o2) -> {
                     Integer parentO1DRT = 0;
@@ -327,7 +335,7 @@ public class BBAAlgorithm implements Algorithm {
 
                     // if cost is lower than B(est) and depth is max, recursive call
                     if (cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime) <= _B && depth < _tasks.length) {
-                        BBA(taskID, j, numFreeTasks, depth, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
+                        BBA(taskID, j, numFreeTasks, depth, clonedProcEndTimes, clonedTasks, clonedS, idleTime, false);
                     }
 
                     // Reset the offseted values.

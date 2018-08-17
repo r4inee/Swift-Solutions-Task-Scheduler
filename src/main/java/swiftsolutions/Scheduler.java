@@ -112,7 +112,7 @@ public class Scheduler {
         _start = System.currentTimeMillis();
        _algorithm = _argumentParser.getVisualizeOption().getArgs() ?
                 _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_VISUAL, numProcessors, numCores) :
-                _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND, numProcessors, numCores);
+                _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR, numProcessors, numCores);
 
         if (_argumentParser.getVisualizeOption().getArgs()) {
             this._outputManager.send(new OutputMessage(OutputType.STATUS, "Starting GUI..."));
