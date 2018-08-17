@@ -10,8 +10,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -19,13 +17,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 import swiftsolutions.exceptions.InputException;
 import swiftsolutions.input.DOTInputParser;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
-import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithm;
 import swiftsolutions.taskscheduler.brandandboundastar.BBAAlgorithm;
 import swiftsolutions.util.Pair;
 
