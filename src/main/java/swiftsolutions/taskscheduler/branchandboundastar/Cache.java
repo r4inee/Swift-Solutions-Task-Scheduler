@@ -1,9 +1,12 @@
-package swiftsolutions.taskscheduler.brandandboundastar;
+package swiftsolutions.taskscheduler.branchandboundastar;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 
+/**
+ * Class for caching schedules using hashcodes.
+ */
 public class Cache extends HashSet {
     public static final int START_TIME = 0;
     public static final int END_TIME = 1;
@@ -13,9 +16,14 @@ public class Cache extends HashSet {
     public int _numProc;
     public int[][] _schedule;
 
+    /**
+     * Constructor for the cache schedule.
+     * @param numProc Total number of processors
+     * @param schedule The current partial schedule
+     */
     public Cache (int numProc, int[][] schedule) {
-        _numProc = numProc;
         _schedule = schedule;
+        _numProc = numProc;
     }
 
     @Override

@@ -9,7 +9,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Class that executes the Branch and bound algorithm
+ * Class that executes the Branch and bound algorithm, used to test pruning techniques and used for milestone 1.
  */
 public class BNBAlgorithm implements Algorithm {
 
