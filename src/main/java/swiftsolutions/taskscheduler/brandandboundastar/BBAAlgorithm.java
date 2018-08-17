@@ -103,7 +103,7 @@ public class BBAAlgorithm implements Algorithm {
             freeTasks[i] = initialB.poll();
         }
 
-        int[] fTask = free(_tasks, initialSchedule);
+        int[] fTask = free(initialSchedule, _tasks);
         if ((isAllIndependent(freeTasks)) || ((isFTO(freeTasks, initialSchedule)) && (fTask.length == freeTasks.length))) {
             BBA(EMPTY, EMPTY, EMPTY, EMPTY,
                     _tasks.length, 0, procEndTimes, _tasks, initialSchedule, idleTime);
