@@ -6,6 +6,8 @@ import swiftsolutions.taskscheduler.Task;
 import swiftsolutions.util.Pair;
 
 import java.util.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 import java.util.stream.Collectors;
 
 /**
@@ -33,6 +35,11 @@ public class BBAAlgorithmParallel implements Algorithm {
     public static final int NUM_DEP = 1;
     public static final int BOTTOM_LVL = 2;
 
+
+    // parallelization
+    ForkJoinPool _commonPool;
+
+
     public BBAAlgorithmParallel() {
     }
 
@@ -56,6 +63,16 @@ public class BBAAlgorithmParallel implements Algorithm {
      */
     @Override
     public Schedule execute(Map<Integer, Task> tasks) {
+
+
+
+        // for Fork/Join task execution
+        _commonPool = ForkJoinPool.commonPool();
+
+
+
+
+
         _taskMap = tasks;
         Set<Task> leafs = tasks.values() //find all the leaf nodes
                 .stream()
@@ -87,6 +104,64 @@ public class BBAAlgorithmParallel implements Algorithm {
         return convertSchedule(_bestFState);
     }
 
+
+    /**
+     * This class is a RecursiveAction (ForkJoinTask) and serves parallelize the task of choosing a free task to
+     * allocate on each processor, by parallelizing the consideration of each processor to allocate on.
+     *
+     */
+
+    private class RecursiveAc extends RecursiveAction {
+
+        private int _currTask;
+        private int _currProc;
+        private int _prevTask;
+        private int _numFreeTasks;
+        private int _depth;
+        private int[] _clndProcEndTimes;
+        private int[][] _clndTasks;
+        private int[][] _clndS;
+        private int _idleTime;
+
+
+        private RecursiveAc(int currTask, int currProc, int prevTask, int prevProc, int numFreeTasks,
+                            int depth, int[] clndProcEndTimes, int[][] clndTasks, int[][] clndS, int idleTime) {
+
+            _currTask = currTask;
+            _currProc = currProc;
+            _prevTask = prevTask;
+            _numFreeTasks = numFreeTasks;
+            _depth = depth;
+            _clndProcEndTimes = clndProcEndTimes;
+            _clndTasks = clndTasks;
+            _clndS = clndS;
+            _idleTime = idleTime;
+
+
+        }
+
+
+        @Override
+        protected void compute() {
+
+
+/*            if (BBAAlgorithmParallel.this.cost()) {
+                // keep going down branch recursively
+
+            } else {
+
+
+
+
+            }*/
+
+        }
+    }
+
+
+
+
+
     /**
      * This is the main method that creates the schedules implemented using the pseudo code. Hybrid Branch and Bound
      * with A* algorithm
@@ -103,6 +178,7 @@ public class BBAAlgorithmParallel implements Algorithm {
         //priority queue for tasks based on cost function
         int[] freeTasks = free(s, tasks);
         if (freeTasks.length != 0) {
+
             if (isAllIndependent(freeTasks) && (freeTasks.length > 1)) {
                 Comparator<Integer> c = (o1, o2) -> {
                     Integer o1Process = _tasks[o1][PROC_TIME];
@@ -119,6 +195,7 @@ public class BBAAlgorithmParallel implements Algorithm {
                 }
                 FTO(orderedTasks, procEndTimes, tasks, s, idleTime);
                 return;
+
             } else if (isFTO(freeTasks, s)) {
                 Comparator<Integer> c = (o1, o2) -> {
                     Integer parentO1DRT = 0;
@@ -187,6 +264,9 @@ public class BBAAlgorithmParallel implements Algorithm {
                     }
                 }
             }
+
+            // TODO: get commonpool and add each
+
             for (int i = 0; i < numFreeTasks; i++) {
                 for (int j = 0; j < _numProcessors; j++) { //add the task to all processors
                     if (j > getFirstEmptyProc(s)) {
@@ -261,6 +341,8 @@ public class BBAAlgorithmParallel implements Algorithm {
     private void FTO(int[] orderedTasks, int[] procEndTimes, int[][] tasks, int[][] s, int idleTime) {
         int task = orderedTasks[0];
         int[] newOrder = new int[orderedTasks.length - 1];
+        // populate new order with all except the first task, because that's the one 
+        // we're going to add to each processor 
         for (int i = 1; i < orderedTasks.length; i++) {
             newOrder[i - 1] = orderedTasks[i];
         }
@@ -285,18 +367,31 @@ public class BBAAlgorithmParallel implements Algorithm {
             clonedS[task][END_TIME] = taskStart + tasks[task][PROC_TIME];
             clonedProcEndTimes[j] = clonedS[task][END_TIME];
             for (int dj = 0; dj < _dependencies.length; dj++) {
+                // if anything (dj) depends on this task, its (dj's) no. of dependencies 
+                // now decrements 
                 if (_dependencies[dj][task] == 1) {
                     tasks[dj][NUM_DEP]--;
                 }
             }
 
-            if ((newOrder.length == 0) && (cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder)) <= _B) {
+            // TODO: only need to invoke cost(..) once, and also 'newOrder' parameter never used in cost(..)
+            int costClonedS = cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder);
+            if ((newOrder.length == 0) && costClonedS <= _B) {
+                _bestFState = clonedS;
+                _B = costClonedS;
+                return;
+            } else {
+                FTO(newOrder, clonedProcEndTimes, tasks, clonedS, idleTime);
+            }
+/*            if ((newOrder.length == 0) && (cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder)) <= _B) {
                 _bestFState = clonedS;
                 _B = cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder);
                 return;
             } else {
                 FTO(newOrder, clonedProcEndTimes, tasks, clonedS, idleTime);
-            }
+            }*/
+
+
 
             if (offset > clonedProcEndTimes[j]) {
                 idleTime -= offset - clonedProcEndTimes[j];
@@ -486,14 +581,18 @@ public class BBAAlgorithmParallel implements Algorithm {
     }
 
     private boolean isAllIndependent(int[] freeTask) {
+        // a (free) task is independent if it has no parents/dependencies AND no
+        // children
         for (int i = 0; i < freeTask.length; i++) {
             for (int j = 0; j < _dependencies.length; j++) {
                 if (_dependencies[i][j] == 1) {
+                    // we found a parent/dependency ('j'), so not all free tasks are independent
                     return false;
                 }
             }
             for (int k = 0; k < _dependencies[i].length; k++) {
                 if (_dependencies[k][i] == 1) {
+                    // we found a child ('k'), so not all free tasks are independent
                     return false;
                 }
             }
@@ -506,6 +605,8 @@ public class BBAAlgorithmParallel implements Algorithm {
             int parents = _taskMap.get(i).getParentTasks().size();
             int children = _taskMap.get(i).getChildTasks().size();
 
+            // each and every free task MUST have at most 1 parent and at most 1 children, otherwise
+            // we are not in FTO
             if ((parents <= 1) && (children <= 1)) {
                 int tChild = _taskMap.get(i).getChildTasks().iterator().next();
                 int tParent = _taskMap.get(i).getParentTasks().iterator().next();
