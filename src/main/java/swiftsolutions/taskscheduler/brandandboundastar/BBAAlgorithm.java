@@ -105,9 +105,9 @@ public class BBAAlgorithm implements Algorithm {
         }
 
         int[] fTask = free(initialSchedule, _tasks);
-        if ((isAllIndependent(freeTasks)) || ((isFTO(freeTasks, initialSchedule)) && (fTask.length == freeTasks.length))) {
+        if ((isAllIndependent(freeTasks)) || ((isFTO(fTask, initialSchedule)) && (fTask.length == freeTasks.length))) {
             BBA(EMPTY, EMPTY, EMPTY, EMPTY,
-                    fTask.length, 0, procEndTimes, _tasks, initialSchedule, idleTime);
+                    tasks.size(), 0, procEndTimes, _tasks, initialSchedule, idleTime);
         } else {
             FTO(freeTasks, procEndTimes, _tasks, initialSchedule, idleTime);
             BBA(EMPTY, EMPTY, EMPTY, EMPTY,
@@ -287,10 +287,10 @@ public class BBAAlgorithm implements Algorithm {
                     }
                     previousTask = previousTask; //reset method values
                     previousProcessor = previousProcessor;
-                    numFreeTasks = free(clonedS, clonedTasks).length;
+                    numFreeTasks = free(clonedS, clonedTasks).length - 1;
                     depth++;
                     //if cost is lower than B(est) and depth is max, set current best, go back up tree
-                    if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && depth == _tasks.length) {
+                    if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && (depth == _tasks.length)) {
                         _bestFState = clonedS; // clonedS
                         _B = cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks);
                     }
@@ -301,8 +301,8 @@ public class BBAAlgorithm implements Algorithm {
                     }
                     numFreeTasks = freeTasks.length;
                     depth--;
-                    if (offset > clonedProcEndTimes[j]) {
-                        idleTime -= offset - clonedProcEndTimes[j];
+                    if (offset > procEndTimes[j]) {
+                        idleTime -= offset - procEndTimes[j];
                     }
                 }
             }
@@ -359,16 +359,17 @@ public class BBAAlgorithm implements Algorithm {
                 }
             }
             if (newOrder.length == 0) {
-                if (cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder) <= _B) {
+                int B = cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder);
+                if (B <= _B) {
                     _bestFState = clonedS; // clonedS
-                    _B = cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder);
+                    _B = B;
                 }
             } else {
                 FTO(newOrder, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
             }
 
-            if (offset > clonedProcEndTimes[j]) {
-                idleTime -= offset - clonedProcEndTimes[j];
+            if (offset > procEndTimes[j]) {
+                idleTime -= offset - procEndTimes[j];
             }
         }
     }
