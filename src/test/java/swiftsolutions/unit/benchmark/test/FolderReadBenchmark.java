@@ -9,8 +9,6 @@ import org.junit.Test;
 
 import swiftsolutions.unit.benchmark.BenchmarkParser;
 
-import static junit.framework.Assert.assertTrue;
-
 /**
  *Test the ability of the benchmarkParser to generate and catagorise files
  */
