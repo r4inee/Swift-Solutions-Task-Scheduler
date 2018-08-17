@@ -1,12 +1,9 @@
 package swiftsolutions.unit.benchmark.test;
 
 import static org.junit.Assert.assertEquals;
-
 import java.io.File;
-
 import org.junit.Before;
 import org.junit.Test;
-
 import swiftsolutions.unit.benchmark.BenchmarkParser;
 
 /**

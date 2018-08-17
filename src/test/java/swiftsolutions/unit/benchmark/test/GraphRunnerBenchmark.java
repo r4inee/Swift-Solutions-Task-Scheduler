@@ -1,19 +1,11 @@
 package swiftsolutions.unit.benchmark.test;
 
 import static org.junit.Assert.assertEquals;
-
 import java.io.File;
-import java.nio.file.Files;
 import java.util.ArrayList;
-
-import org.junit.Before;
 import org.junit.Test;
-
-import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.unit.benchmark.BenchmarkAppRunner;
 import swiftsolutions.unit.benchmark.BenchmarkParser;
-
-import static junit.framework.Assert.assertTrue;
 
 /**
  *Test the ability of the benchmarkParser to generate and catagorise files
