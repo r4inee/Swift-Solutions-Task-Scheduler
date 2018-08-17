@@ -1,0 +1,17 @@
+swiftsolutions
+swiftsolutions.cli
+swiftsolutions.cli.options
+swiftsolutions.exceptions
+swiftsolutions.gui
+swiftsolutions.input
+swiftsolutions.interfaces.input
+swiftsolutions.interfaces.output
+swiftsolutions.interfaces.taskscheduler
+swiftsolutions.output
+swiftsolutions.taskscheduler
+swiftsolutions.taskscheduler.branchandbound
+swiftsolutions.taskscheduler.brandandboundastar
+swiftsolutions.unit
+swiftsolutions.unit.benchmark
+swiftsolutions.unit.benchmark.test
+swiftsolutions.util
