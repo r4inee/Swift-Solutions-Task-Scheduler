@@ -6,7 +6,7 @@ import swiftsolutions.input.DOTInputParser;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
-import swiftsolutions.taskscheduler.brandandboundastar.BBAAlgorithm;
+import swiftsolutions.taskscheduler.branchandboundastar.BBAAlgorithm;
 import swiftsolutions.util.Pair;
 
 import java.util.HashMap;

@@ -2,8 +2,8 @@ package swiftsolutions.taskscheduler;
 
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithm;
-import swiftsolutions.taskscheduler.brandandboundastar.BBAAlgorithm;
 import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithmVisual;
+import swiftsolutions.taskscheduler.branchandboundastar.BBAAlgorithm;
 
 /**
  * Enum of algorithms that we may want to use for scheduling

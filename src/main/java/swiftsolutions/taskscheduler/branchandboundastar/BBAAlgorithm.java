@@ -1,4 +1,4 @@
-package swiftsolutions.taskscheduler.brandandboundastar;
+package swiftsolutions.taskscheduler.branchandboundastar;
 
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.Schedule;
@@ -8,19 +8,21 @@ import swiftsolutions.util.Pair;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * A class containing the BBA* algorithm, blacked boxed in primitive types.
+ */
 public class BBAAlgorithm implements Algorithm {
-    private int _numProcessors;
-
     private int[][] _tasks; // row represents the task, cols represent { proc time, number of dependencies, bottom level}
     private int[][] _dependencies; // row represents child, col represents parent, value 1 represents is parent 0 if not
     private int[][] _bestFState; // output schedule
     private int[][] _communicationCosts; // row represents the parent, col represents the child, value is the cost
-    private int[][] _nodeEquivalence;
+    private int[][] _nodeEquivalence; // map for detecting node equivalence
     private Map<Integer, Task> _taskMap;
-    private Set<Cache> _seenSchedules;
-    private int _B;
-    private int _fSInit;
+    private Set<Cache> _seenSchedules; // set of cached schedules
+    private int _B; // current best bound
+    private int _fSInit; // initial f bound.
 
+    // Macros for the constants used in mapping.
     public static final int EMPTY = -1;
     public static final int SCHEDULE_COL_SIZE = 3;
     // used for schedules in general (including _bestFState)
@@ -31,7 +33,11 @@ public class BBAAlgorithm implements Algorithm {
     public static final int PROC_TIME = 0;
     public static final int NUM_DEP = 1;
     public static final int BOTTOM_LVL = 2;
+    private int _numProcessors;
 
+    /**
+     * Constructor for the BBAAlgorithm.
+     */
     public BBAAlgorithm() {
         _seenSchedules = new HashSet<>();
     }
@@ -48,15 +54,21 @@ public class BBAAlgorithm implements Algorithm {
     }
 
     /**
-     * Overrides Algorithm execute
+     * Overrides Algorithm execute, contains pre-processing for the algorithm.
      * See Algorithm#execute()
      *
      * @param tasks tasks that will be scheduled
-     * @return
+     * @return A schedule object for the output parser
      */
     @Override
     public Schedule execute(Map<Integer, Task> tasks) {
+        // Initialising variables
         _taskMap = tasks;
+        _B = 0; // Max int
+        int maxBotLevel = 0;
+        int idleTime = 0;
+
+        // Calculates the Bottom Level for each task.
         Set<Task> leafs = tasks.values() //find all the leaf nodes
                 .stream()
                 .filter((Task task) -> task.getChildTasks().size() == 0)
@@ -66,73 +78,74 @@ public class BBAAlgorithm implements Algorithm {
             getBottomLevels(leaf.getParentTasks(), leaf.getProcessTime());
         }
         convertTasks(); //converts the tasks into the 2D array format
+
         int[] procEndTimes = new int[_numProcessors]; // create a 2D array with row size number of processors, 1 col
         int[][] initialSchedule = new int[_tasks.length][SCHEDULE_COL_SIZE];
-        // need to make the processor value on initial schedule -1;
+        // Initialise an empty schedule;
         for (int i = 0; i < initialSchedule.length; i++) {
             initialSchedule[i][PROCESSOR_INDEX] = EMPTY;
             initialSchedule[i][START_TIME] = EMPTY;
-            initialSchedule[i][END_TIME] = EMPTY;
         }
-        _B = 0; // Max int
-        int maxBotLevel = 0;
+
+        // Priority queue by bottom level which is also in topological order.
+        Queue<Integer> initialBound = new PriorityQueue<>((o1, o2) -> {
+            Integer blA = _tasks[o1][BOTTOM_LVL];
+            Integer blB = _tasks[o2][BOTTOM_LVL];
+            return blB.compareTo(blA);
+        });
+
+        // Finding the maximum bottle level for cost calculation
         for (int task : _taskMap.keySet()) {
             _B += _taskMap.get(task).getProcessTime();
             if (_taskMap.get(task).getBottomLevel() > maxBotLevel) {
                 maxBotLevel = _taskMap.get(task).getBottomLevel();
             }
+            initialBound.add(task);
         }
+
+        // Node Equivalence Pruning Technique, setting of initial map
         _nodeEquivalence = new int[tasks.size()][tasks.size()];
         for (int i = 0; i < tasks.size(); i++) {
-            for (int j = 0; j < tasks.size(); j++) {
-                if (nodeEquivalence(i, j)) {
-                    _nodeEquivalence[i][j] = 1;
-                }
+            for (int j = i; j < tasks.size(); j++) {
+                nodeEquivalence(i, j);
             }
         }
-        int idleTime = 0;
 
+        // Finding a suitable starting bound for the algorithm.
         _fSInit = Math.max(_B / _numProcessors, maxBotLevel);
-        Queue<Integer> initialB = new PriorityQueue<>((o1, o2) -> {
-            Integer blA = _tasks[o1][BOTTOM_LVL];
-            Integer blB = _tasks[o2][BOTTOM_LVL];
-            return blB.compareTo(blA);
-        });
-        initialB.addAll(_taskMap.keySet());
+
+        // Copy to primitive array for FTO.
         int[] freeTasks = new int[tasks.size()];
         for (int i = 0; i < freeTasks.length; i++) {
-            freeTasks[i] = initialB.poll();
+            freeTasks[i] = initialBound.poll();
         }
-
+        // If the task are either all independent or in fixed task order, start the algorithm and will order in BBA.
         int[] fTask = free(initialSchedule, _tasks);
-        if ((isAllIndependent(freeTasks)) || ((isFTO(fTask, initialSchedule)) && (fTask.length == freeTasks.length))) {
-            BBA(EMPTY, EMPTY, EMPTY, EMPTY,
-                    tasks.size(), 0, procEndTimes, _tasks, initialSchedule, idleTime);
+        if ((isAllIndependent(fTask)) || ((isFTO(fTask, initialSchedule)) && (fTask.length == _tasks.length))) {
+            BBA(EMPTY, EMPTY, tasks.size(), 0, procEndTimes, _tasks, initialSchedule, idleTime);
         } else {
-            FTO(freeTasks, procEndTimes, _tasks, initialSchedule, idleTime);
-            BBA(EMPTY, EMPTY, EMPTY, EMPTY,
-                    fTask.length, 0, procEndTimes, _tasks, initialSchedule, idleTime); //Call the recursion algorithm
+            // Complete an FTO to find initial bound.
+            FTO(freeTasks,0, procEndTimes, _tasks, initialSchedule, idleTime);
+            BBA(EMPTY, EMPTY, fTask.length, 0, procEndTimes, _tasks, initialSchedule, idleTime); //Call the recursion algorithm
         }
         return convertSchedule(_bestFState);
     }
 
     /**
-     * This is the main method that creates the schedules implemented using the pseudo code. Hybrid Branch and Bound
-     * with A* algorithm
+     * This is the main method that creates the schedules implemented using the pseudo code of BBA*.
      *
-     * @param currentTask
-     * @param currentProcessor
-     * @param previousTask
-     * @param previousProcessor
-     * @param numFreeTasks
-     * @param depth
+     * @param previousTask The previous task which was scheduled
+     * @param previousProcessor The previous processor which task was scheduled
+     * @param numFreeTasks The previous number of available tasks
+     * @param depth The current recursive depth
      */
-    private void BBA(int currentTask, int currentProcessor, int previousTask,
-                     int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s, int idleTime) {
-        //priority queue for tasks based on cost function
+    private void BBA(int previousTask, int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s, int idleTime) {
+        // The current list of available tasks.
         int[] freeTasks = free(s, tasks);
         if (freeTasks.length != 0) {
+            // Check if all the left over tasks are available.
             if (isAllIndependent(freeTasks)) {
+                // Order task processing time as communication time will all be zero.
                 Comparator<Integer> c = (Integer o1, Integer o2) -> {
                     Integer o1Process = _tasks[o1][PROC_TIME];
                     Integer o2Process = _tasks[o2][PROC_TIME];
@@ -146,9 +159,10 @@ public class BBAAlgorithm implements Algorithm {
                 for (int i = 0; i < freeTasks.length; i++) {
                     orderedTasks[i] = queue.poll();
                 }
-                FTO(orderedTasks, procEndTimes, tasks, s, idleTime);
+                FTO(orderedTasks,0, procEndTimes, tasks, s, idleTime);
                 return;
             } else if (isFTO(freeTasks, s) && (freeTasks.length == numFreeTasks)) {
+                // Check if the tasks are in FTO and order by non-decreasing DRT then by non-increasing out edge costs.
                 Comparator<Integer> c = (o1, o2) -> {
                     Integer parentO1DRT = 0;
                     int o1Parents = _taskMap.get(o1).getParentTasks().size();
@@ -179,22 +193,23 @@ public class BBAAlgorithm implements Algorithm {
                         }
                         return outO2.compareTo(outO1);
                     }
-
                     return parentO1DRT.compareTo(parentO2DRT);
                 };
+
+                // Order tasks into a priority queue
                 Queue<Integer> queue = new PriorityQueue<>(freeTasks.length, c);
                 for (int j = 0; j < freeTasks.length; j++) {
                     queue.add(freeTasks[j]);
                 }
 
+                // Verification step that all nodes are still in non-decreasing out edge costs.
                 if (queue.size() > 1) {
-                    int[] orderedTasks = new int[queue.size()];
+                    int[] verify = new int[queue.size()];
                     boolean order = true;
-                    for (int j = 0; j < orderedTasks.length; j++) {
-                        orderedTasks[j] = queue.poll();
+                    for (int j = 0; j < verify.length; j++) {
                         if (j > 1) {
-                            int o1 = orderedTasks[j - 1];
-                            int o2 = orderedTasks[j];
+                            int o1 = verify[j - 1];
+                            int o2 = verify[j];
 
                             int outO1 = 0;
                             int outO2 = 0;
@@ -211,13 +226,19 @@ public class BBAAlgorithm implements Algorithm {
                             }
                         }
                     }
+                    // If the order is consistent, then order in FTO
                     if (order) {
-                        FTO(orderedTasks, procEndTimes, tasks, s, idleTime);
+                        int[] orderedTasks = new int[freeTasks.length];
+                        for (int i = 0; i < freeTasks.length; i++) {
+                            orderedTasks[i] = queue.poll();
+                        }
+                        FTO(orderedTasks,0, procEndTimes, tasks, s, idleTime);
                         return;
                     }
                 }
             }
 
+            // Cache Pruning which stores recently seen schedules
             Cache cache = new Cache(_numProcessors, s);
             if (_seenSchedules.contains(cache)) {
                 return;
@@ -225,8 +246,11 @@ public class BBAAlgorithm implements Algorithm {
                 _seenSchedules.add(cache);
             }
 
+            // Looping through all permutations of tasks and processors.
             for (int i = 0; i < freeTasks.length; i++) {
-                for (int j = 0; j < _numProcessors; j++) { //add the task to all processors
+                for (int j = 0; j < _numProcessors; j++) {
+
+                    // Processor Normalisation
                     if (j > getFirstEmptyProc(procEndTimes)) {
                         break;
                     }
@@ -237,20 +261,21 @@ public class BBAAlgorithm implements Algorithm {
                             continue;
                         }
                     }
+                    // Task to be scheduled next.
                     int taskID = freeTasks[i];
-                    currentProcessor = j;
-                    currentTask = taskID;
                     // Node Equivalence
                     if (previousTask != EMPTY) {
-                        if (_nodeEquivalence[previousTask][currentTask] == 1) {
+                        if (_nodeEquivalence[previousTask][taskID] == 1) {
                             break;
                         }
                     }
+
+                    // Cloning of schedules, processor end times and tasks
                     int[][] clonedS = copySchedule(s);
                     int[] clonedProcEndTimes = Arrays.copyOf(procEndTimes, procEndTimes.length); //copy Processor end times
                     int[][] clonedTasks = copyTasks(tasks);
-                    //select task to add
-                    //calculate parent offset
+
+                    // Calculate parent offset
                     int offset = 0;
                     for (int di = 0; di < _dependencies[taskID].length; di++) {
                         int tempOffset = clonedS[di][END_TIME];
@@ -266,6 +291,8 @@ public class BBAAlgorithm implements Algorithm {
                             }
                         }
                     }
+
+                    // Calculate the start time of the task
                     int taskStart;
                     if (offset < clonedProcEndTimes[j]) {
                         taskStart = clonedProcEndTimes[j];
@@ -276,6 +303,8 @@ public class BBAAlgorithm implements Algorithm {
                         taskStart = offset;
                         idleTime += offset - clonedProcEndTimes[j];
                     }
+
+                    // Allocate the task on the cloned schedule and update cloned dependencies and processor end times.
                     clonedS[taskID][PROCESSOR_INDEX] = j;
                     clonedS[taskID][START_TIME] = taskStart;
                     clonedS[taskID][END_TIME] = taskStart + clonedTasks[taskID][PROC_TIME];
@@ -285,20 +314,23 @@ public class BBAAlgorithm implements Algorithm {
                             clonedTasks[dj][NUM_DEP]--;
                         }
                     }
-                    previousTask = previousTask; //reset method values
-                    previousProcessor = previousProcessor;
+
+                    // Calculate the new current number of free tasks and increment depth
                     numFreeTasks = free(clonedS, clonedTasks).length - 1;
                     depth++;
-                    //if cost is lower than B(est) and depth is max, set current best, go back up tree
-                    if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && (depth == _tasks.length)) {
+
+                    // if cost is lower than B(est) and depth is max, set current best, go back up tree
+                    if (cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime) <= _B && (depth == _tasks.length)) {
                         _bestFState = clonedS; // clonedS
-                        _B = cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks);
+                        _B = cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime);
                     }
-                    //if cost is lower than B(est) and depth is max, recursive call
-                    if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && depth < _tasks.length) {
-                        // Scheduling Caching
-                        BBA(currentTask, currentProcessor, currentTask, currentProcessor, numFreeTasks, depth, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
+
+                    // if cost is lower than B(est) and depth is max, recursive call
+                    if (cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime) <= _B && depth < _tasks.length) {
+                        BBA(taskID, j, numFreeTasks, depth, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
                     }
+
+                    // Reset the offseted values.
                     numFreeTasks = freeTasks.length;
                     depth--;
                     if (offset > procEndTimes[j]) {
@@ -309,28 +341,37 @@ public class BBAAlgorithm implements Algorithm {
         }
     }
 
-    private void FTO(int[] orderedTasks, int[] procEndTimes, int[][] tasks, int[][] s, int idleTime) {
-        int task = orderedTasks[0];
-        int[] newOrder = new int[orderedTasks.length - 1];
-        for (int i = 1; i < orderedTasks.length; i++) {
-            newOrder[i - 1] = orderedTasks[i];
-        }
+    /**
+     * Recursive Ordering for FTO, AllIndependence and InitialBound.
+     *
+     * @param orderedTasks A primitive priority queue off ordered tasks
+     * @param procEndTimes Index pointing to element in the priority queue for current state
+     * @param tasks Reference to the map of tasks
+     * @param s The current schedule
+     * @param idleTime The cumulative idle time
+     */
+    private void FTO(int[] orderedTasks, int index, int[] procEndTimes, int[][] tasks, int[][] s, int idleTime) {
+        int task = orderedTasks[index];
 
-        for (int j = 0; j < _numProcessors; j++) { //add the task to all processors
+        // Round robin technique to cover all permutaions of processors
+        for (int j = 0; j < _numProcessors; j++) {
             if (j > getFirstEmptyProc(procEndTimes)) {
                 break;
             }
+
+            // Cloning of schedules, processor end times and tasks
             int[][] clonedS = copySchedule(s);
             int[] clonedProcEndTimes = Arrays.copyOf(procEndTimes, procEndTimes.length); //copy Processor end times
             int[][] clonedTasks = copyTasks(tasks);
-            //calculate parent offset
+
+            // Calculate parent offset
             int offset = 0;
             for (int di = 0; di < _dependencies[task].length; di++) {
                 int tempOffset = clonedS[di][END_TIME];
                 //look at all parents of current task (parent task id is DJ)
                 if (_dependencies[task][di] == 1) {
                     //check if that parent is on the same proc
-                    if ((clonedS[di][PROCESSOR_INDEX] != j) && (clonedS[di][PROCESSOR_INDEX] != EMPTY)) {
+                    if (clonedS[di][PROCESSOR_INDEX] != j) {
                         //if the processor is not on the same
                         tempOffset += _communicationCosts[di][task];
                     }
@@ -339,6 +380,8 @@ public class BBAAlgorithm implements Algorithm {
                     }
                 }
             }
+
+            // Calculate the start time of the task
             int taskStart;
             if (offset < clonedProcEndTimes[j]) {
                 taskStart = clonedProcEndTimes[j];
@@ -349,6 +392,8 @@ public class BBAAlgorithm implements Algorithm {
                 taskStart = offset;
                 idleTime += offset - clonedProcEndTimes[j];
             }
+
+            // Allocate the task on the cloned schedule and update cloned dependencies and processor end times.
             clonedS[task][PROCESSOR_INDEX] = j;
             clonedS[task][START_TIME] = taskStart;
             clonedS[task][END_TIME] = taskStart + clonedTasks[task][PROC_TIME];
@@ -358,16 +403,21 @@ public class BBAAlgorithm implements Algorithm {
                     clonedTasks[dj][NUM_DEP]--;
                 }
             }
-            if (newOrder.length == 0) {
-                int B = cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder);
-                if (B <= _B) {
+
+            // Check if all the tasks has been ordered, FTO guarantees optimality.
+            if (index == (orderedTasks.length-1)) {
+                // Update the current bound.
+                int bound = cost(clonedS, clonedProcEndTimes, task, offset, idleTime);
+                if (bound <= _B) {
                     _bestFState = clonedS; // clonedS
-                    _B = B;
+                    _B = bound;
                 }
             } else {
-                FTO(newOrder, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
+                // Recursive call to schedule next task
+                FTO(orderedTasks, index+1, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
             }
 
+            // Reset the offseted values.
             if (offset > procEndTimes[j]) {
                 idleTime -= offset - procEndTimes[j];
             }
@@ -375,10 +425,10 @@ public class BBAAlgorithm implements Algorithm {
     }
 
     /**
-     * Method to make a copy of a schedule
+     * Method to make a copy of a schedule.
      *
-     * @param s
-     * @return
+     * @param s The schedule to be copied.
+     * @return A copy of the schedule
      */
     private int[][] copySchedule(int[][] s) {
         int[][] clonedS = new int[s.length][s[START_TIME].length]; //START_TIME used to just to find length
@@ -391,10 +441,10 @@ public class BBAAlgorithm implements Algorithm {
     }
 
     /**
-     * Method to make a copy of tasks
+     * Method to make a copy of tasks.
      *
-     * @param tasks
-     * @return
+     * @param tasks The set of tasks to be copied
+     * @return A copy of the tasks map
      */
     private int[][] copyTasks(int[][] tasks) {
         int[][] clonedTasks = new int[tasks.length][tasks[PROC_TIME].length]; //copies the tasks
@@ -407,12 +457,10 @@ public class BBAAlgorithm implements Algorithm {
     }
 
     /**
-     * Recursive function that updates the bottom levels
-     * of the nodes in the input set and all
-     * the nodes of that parent
+     * Recursive function that updates the bottom levels of the nodes in the input set and all the nodes of that parent.
      *
-     * @param nodes
-     * @param currentBottomLevel
+     * @param nodes The set of tasks
+     * @param currentBottomLevel The current bottom level calculated
      */
     private void getBottomLevels(Set<Integer> nodes, int currentBottomLevel) {
         for (Integer node : nodes) {
@@ -428,13 +476,16 @@ public class BBAAlgorithm implements Algorithm {
     }
 
     /**
-     * Based off the cost function f described where
-     * f = max{Initial(s), idle-time(s), bottom-level(s), DRT(s)}
+     * Based off the cost function f described where f = max{Initial(s), idle-time(s), bottom-level(s), DRT(s)}.
      *
-     * @param s
-     * @return
+     * @param s The current complete schedule
+     * @param procEndTimes The completed processor end times
+     * @param taskID The last task to be scheduled
+     * @param dataReadyTime Communication delay from parents offsets
+     * @param idleTime The cumulative idle time
+     * @return The total cost of the input schedule
      */
-    private int cost(int[][] s, int[] procEndTimes, int taskID, int dataReadyTime, int idleTime, int[] freeTasks) {
+    private int cost(int[][] s, int[] procEndTimes, int taskID, int dataReadyTime, int idleTime) {
         //cost of the initial state
         int cost = _fSInit;
         for (int i = 0; i < procEndTimes.length; i++) {
@@ -457,12 +508,12 @@ public class BBAAlgorithm implements Algorithm {
     }
 
     /**
-     * This method takes in a schedule and returns an array of free tasks
-     * which are tasks that are not already scheduled and there parents
-     * have all been scheduled
+     * This method takes in a schedule and returns an array of free tasks which are tasks that are not already
+     * scheduled and there parents have all been scheduled.
      *
-     * @param s
-     * @return
+     * @param s The current schedule
+     * @param tasks The map of tasks relationships
+     * @return The current list of available tasks
      */
     private int[] free(int[][] s, int[][] tasks) {
         Set<Integer> taskSet = new HashSet<>();
@@ -486,9 +537,8 @@ public class BBAAlgorithm implements Algorithm {
     }
 
     /**
-     * This method is used to convertTasks the task map passed into
-     * execute() into the arrays used to map the data in this
-     * class
+     * This method is used to convertTasks the task map passed into execute() into the arrays used to map the data in
+     * this class
      */
     private void convertTasks() {
         //initialize _tasks array
@@ -512,11 +562,10 @@ public class BBAAlgorithm implements Algorithm {
     }
 
     /**
-     * Convert the final 2D array schedule back into a schedule that is to be
-     * returned be the execute method
+     * Convert the final 2D array schedule back into a schedule that is to be returned be the execute method.
      *
-     * @param schedule
-     * @return
+     * @param schedule The current schedule outputted by the algorithm
+     * @return The converted Schedule object for output parser
      */
     private Schedule convertSchedule(int[][] schedule) {
         Map<Integer, Pair<Integer, Integer>> scheduleMap = new LinkedHashMap<>();
@@ -528,6 +577,12 @@ public class BBAAlgorithm implements Algorithm {
         return new Schedule(scheduleMap, _numProcessors);
     }
 
+    /**
+     * Find the first empty processor from the processor end times.
+     *
+     * @param procEndTimes Contains the finishing time of each processor at current state of algorithm
+     * @return The id of the first empty processor
+     */
     private int getFirstEmptyProc(int[] procEndTimes) {
         for (int i = 0; i < _numProcessors; i++) {
             if (procEndTimes[i] == 0) {
@@ -537,6 +592,12 @@ public class BBAAlgorithm implements Algorithm {
         return _numProcessors;
     }
 
+    /**
+     * Checks if all the left over tasks are independent from each other.
+     *
+     * @param freeTask The list of available tasks at current iteration of the algorithm
+     * @return true if the available tasks are all independent, else false
+     */
     private boolean isAllIndependent(int[] freeTask) {
         for (int i = 0; i < freeTask.length; i++) {
             if (_taskMap.get(freeTask[i]).getParentTasks().size() != 0) {
@@ -549,16 +610,24 @@ public class BBAAlgorithm implements Algorithm {
         return true;
     }
 
+    /**
+     * Checks if the available tasks can be scheduled in a fixed order.
+     * @param freeTasks The list of available tasks at the current iteration of the algorithm
+     * @param schedule The current schedule
+     * @return true if the available tasks can be order it FTO, else false
+     */
     private boolean isFTO(int[] freeTasks, int[][] schedule) {
         for (int i = 0; i < freeTasks.length; i++) {
             int parents = _taskMap.get(freeTasks[i]).getParentTasks().size();
             int children = _taskMap.get(freeTasks[i]).getChildTasks().size();
 
+            // Check if all nodes has only one or less parent and one or less child for detecting Fork+Join FTO
             if ((parents <= 1) && (children <= 1)) {
                 if ((parents == 0) && (children == 0)) {
                     continue;
                 }
 
+                // Check all nodes have the same children for detecting Join FTO.
                 if (children == 1) {
                     int tChild = _taskMap.get(freeTasks[i]).getChildTasks().iterator().next();
                     for (int j = 0; j < freeTasks.length; j++) {
@@ -574,6 +643,7 @@ public class BBAAlgorithm implements Algorithm {
                     }
                 }
 
+                // Check all nodes have the same parent for detecting Fork FTO.
                 if (parents == 1) {
                     int proc = EMPTY;
                     for (int j = 0; j < freeTasks.length; j++) {
@@ -599,25 +669,32 @@ public class BBAAlgorithm implements Algorithm {
         return true;
     }
 
-    private boolean nodeEquivalence(int taskA, int taskB) {
+    /**
+     * Pre-processing of the algorithm to mark all tasks which are equivalent to each other, same parent, child,
+     * weight and also communication costs.
+     *
+     * @param taskA Task A
+     * @param taskB Task B
+     */
+    private void nodeEquivalence(int taskA, int taskB) {
         for (int i = 0; i < _dependencies.length; i++) {
             if (_dependencies[taskA][i] == 1) {
                 if (_dependencies[taskB][i] != 1) {
-                    return false;
+                    return;
                 }
                 if (_communicationCosts[i][taskA] != _communicationCosts[i][taskB]) {
-                    return false;
+                    return;
                 }
             }
             if (_dependencies[i][taskA] == 1) {
                 if (_dependencies[i][taskB] != 1) {
-                    return false;
+                    return;
                 }
                 if (_communicationCosts[taskA][i] != _communicationCosts[taskB][i]) {
-                    return false;
+                    return;
                 }
             }
         }
-        return true;
+        _nodeEquivalence[taskA][taskB] = 1;
     }
 }
