@@ -72,6 +72,7 @@ public class BBAAlgorithm implements Algorithm {
         for (int i = 0; i < initialSchedule.length; i++) {
             initialSchedule[i][PROCESSOR_INDEX] = EMPTY;
             initialSchedule[i][START_TIME] = EMPTY;
+            initialSchedule[i][END_TIME] = EMPTY;
         }
         _B = 0; // Max int
         int maxBotLevel = 0;
@@ -106,11 +107,11 @@ public class BBAAlgorithm implements Algorithm {
         int[] fTask = free(initialSchedule, _tasks);
         if ((isAllIndependent(freeTasks)) || ((isFTO(freeTasks, initialSchedule)) && (fTask.length == freeTasks.length))) {
             BBA(EMPTY, EMPTY, EMPTY, EMPTY,
-                    _tasks.length, 0, procEndTimes, _tasks, initialSchedule, idleTime);
+                    fTask.length, 0, procEndTimes, _tasks, initialSchedule, idleTime);
         } else {
             FTO(freeTasks, procEndTimes, _tasks, initialSchedule, idleTime);
             BBA(EMPTY, EMPTY, EMPTY, EMPTY,
-                    _tasks.length, 0, procEndTimes, _tasks, initialSchedule, idleTime); //Call the recursion algorithm
+                    fTask.length, 0, procEndTimes, _tasks, initialSchedule, idleTime); //Call the recursion algorithm
         }
         return convertSchedule(_bestFState);
     }
@@ -131,7 +132,7 @@ public class BBAAlgorithm implements Algorithm {
         //priority queue for tasks based on cost function
         int[] freeTasks = free(s, tasks);
         if (freeTasks.length != 0) {
-            if (isAllIndependent(freeTasks) && (freeTasks.length > 1)) {
+            if (isAllIndependent(freeTasks)) {
                 Comparator<Integer> c = (Integer o1, Integer o2) -> {
                     Integer o1Process = _tasks[o1][PROC_TIME];
                     Integer o2Process = _tasks[o2][PROC_TIME];
@@ -147,7 +148,7 @@ public class BBAAlgorithm implements Algorithm {
                 }
                 FTO(orderedTasks, procEndTimes, tasks, s, idleTime);
                 return;
-            } else if (isFTO(freeTasks, s) && (numFreeTasks == freeTasks.length)) {
+            } else if (isFTO(freeTasks, s) && (freeTasks.length == numFreeTasks)) {
                 Comparator<Integer> c = (o1, o2) -> {
                     Integer parentO1DRT = 0;
                     int o1Parents = _taskMap.get(o1).getParentTasks().size();
@@ -245,8 +246,6 @@ public class BBAAlgorithm implements Algorithm {
                             break;
                         }
                     }
-
-                    depth++;
                     int[][] clonedS = copySchedule(s);
                     int[] clonedProcEndTimes = Arrays.copyOf(procEndTimes, procEndTimes.length); //copy Processor end times
                     int[][] clonedTasks = copyTasks(tasks);
@@ -288,12 +287,12 @@ public class BBAAlgorithm implements Algorithm {
                     }
                     previousTask = previousTask; //reset method values
                     previousProcessor = previousProcessor;
-                    numFreeTasks = freeTasks.length - 2;
+                    numFreeTasks = free(clonedS, clonedTasks).length;
+                    depth++;
                     //if cost is lower than B(est) and depth is max, set current best, go back up tree
                     if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && depth == _tasks.length) {
                         _bestFState = clonedS; // clonedS
                         _B = cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks);
-                        continue;
                     }
                     //if cost is lower than B(est) and depth is max, recursive call
                     if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && depth < _tasks.length) {
@@ -331,7 +330,7 @@ public class BBAAlgorithm implements Algorithm {
                 //look at all parents of current task (parent task id is DJ)
                 if (_dependencies[task][di] == 1) {
                     //check if that parent is on the same proc
-                    if (clonedS[di][PROCESSOR_INDEX] != j) {
+                    if ((clonedS[di][PROCESSOR_INDEX] != j) && (clonedS[di][PROCESSOR_INDEX] != EMPTY)) {
                         //if the processor is not on the same
                         tempOffset += _communicationCosts[di][task];
                     }
@@ -363,7 +362,6 @@ public class BBAAlgorithm implements Algorithm {
                 if (cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder) <= _B) {
                     _bestFState = clonedS; // clonedS
                     _B = cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder);
-                    continue;
                 }
             } else {
                 FTO(newOrder, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
@@ -530,7 +528,7 @@ public class BBAAlgorithm implements Algorithm {
     }
 
     private int getFirstEmptyProc(int[] procEndTimes) {
-        for (int i = 0; i < procEndTimes.length; i++) {
+        for (int i = 0; i < _numProcessors; i++) {
             if (procEndTimes[i] == 0) {
                 return i;
             }
