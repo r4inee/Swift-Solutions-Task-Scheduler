@@ -103,13 +103,13 @@ public class BenchmarkAppRunner {
 				long start = System.currentTimeMillis();
 				future = executor.invokeAll(Arrays.asList(new Runner(runnable, tasks, getProcs(runnable))), _timeout, TimeUnit.SECONDS);
 				long end = System.currentTimeMillis();
-				Schedule schedule = future.get(0).get();
 
+				
 				//try record execution logistics in fields, if execution was succesful
 				//all logistic analysis after algorithm execution goes in here
 				try {
 
-
+					Schedule schedule = future.get(0).get();
 					//do a valid schedule check
 					boolean scheduleValid = checkScheduleValidity(schedule,tasks);
 
