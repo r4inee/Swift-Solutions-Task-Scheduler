@@ -251,7 +251,6 @@ public class BBAAlgorithm implements Algorithm {
                     int[] clonedProcEndTimes = Arrays.copyOf(procEndTimes, procEndTimes.length); //copy Processor end times
                     int[][] clonedTasks = copyTasks(tasks);
                     //select task to add
-                    numFreeTasks = freeTasks.length;
                     //calculate parent offset
                     int offset = 0;
                     for (int di = 0; di < _dependencies[taskID].length; di++) {
@@ -259,7 +258,7 @@ public class BBAAlgorithm implements Algorithm {
                         //look at all parents of current task (parent task id is DJ)
                         if (_dependencies[taskID][di] == 1) {
                             //check if that parent is on the same proc
-                            if (clonedS[di][PROCESSOR_INDEX] != j && clonedS[di][PROCESSOR_INDEX] != -1) {
+                            if (clonedS[di][PROCESSOR_INDEX] != j) {
                                 //if the processor is not on the same
                                 tempOffset += _communicationCosts[di][taskID];
                             }
@@ -289,19 +288,19 @@ public class BBAAlgorithm implements Algorithm {
                     }
                     previousTask = previousTask; //reset method values
                     previousProcessor = previousProcessor;
-                    numFreeTasks++;
+                    numFreeTasks = freeTasks.length - 2;
                     //if cost is lower than B(est) and depth is max, set current best, go back up tree
                     if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && depth == _tasks.length) {
                         _bestFState = clonedS; // clonedS
                         _B = cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks);
-                        return;
+                        continue;
                     }
                     //if cost is lower than B(est) and depth is max, recursive call
                     if (cost(clonedS, clonedProcEndTimes, currentTask, offset, idleTime, freeTasks) <= _B && depth < _tasks.length) {
                         // Scheduling Caching
                         BBA(currentTask, currentProcessor, currentTask, currentProcessor, numFreeTasks, depth, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
                     }
-                    numFreeTasks--;
+                    numFreeTasks = freeTasks.length;
                     depth--;
                     if (offset > clonedProcEndTimes[j]) {
                         idleTime -= offset - clonedProcEndTimes[j];
@@ -332,7 +331,7 @@ public class BBAAlgorithm implements Algorithm {
                 //look at all parents of current task (parent task id is DJ)
                 if (_dependencies[task][di] == 1) {
                     //check if that parent is on the same proc
-                    if (clonedS[di][PROCESSOR_INDEX] != j && clonedS[di][PROCESSOR_INDEX] != -1) {
+                    if (clonedS[di][PROCESSOR_INDEX] != j) {
                         //if the processor is not on the same
                         tempOffset += _communicationCosts[di][task];
                     }
@@ -364,7 +363,7 @@ public class BBAAlgorithm implements Algorithm {
                 if (cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder) <= _B) {
                     _bestFState = clonedS; // clonedS
                     _B = cost(clonedS, clonedProcEndTimes, task, offset, idleTime, newOrder);
-                    return;
+                    continue;
                 }
             } else {
                 FTO(newOrder, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
@@ -536,7 +535,7 @@ public class BBAAlgorithm implements Algorithm {
                 return i;
             }
         }
-        return procEndTimes.length;
+        return _numProcessors;
     }
 
     private boolean isAllIndependent(int[] freeTask) {
