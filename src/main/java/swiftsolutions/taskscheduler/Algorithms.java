@@ -5,6 +5,8 @@ import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithm;
 import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithmVisual;
 import swiftsolutions.taskscheduler.branchandboundastar.BBAAlgorithm;
 import swiftsolutions.taskscheduler.branchandboundastarparallel.BBAAlgorithmParallel;
+import swiftsolutions.taskscheduler.branchandboundastarparallel.BBAAlgorithmParallel;
+import swiftsolutions.taskscheduler.brandandboundastar.BBAAlgorithm;
 
 
 /**
