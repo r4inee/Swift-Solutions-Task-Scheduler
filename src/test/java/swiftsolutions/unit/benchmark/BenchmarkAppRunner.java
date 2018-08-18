@@ -22,10 +22,7 @@ import swiftsolutions.input.DOTInputParser;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
-<<<<<<< HEAD
-=======
 import swiftsolutions.taskscheduler.branchandboundastarparallel.BBAAlgorithmParallel;
->>>>>>> imported updated benchmark and tests (test folder) from branch benchmark-validity-check, and added some temporary debugging output print statements to Schedule.java
 import swiftsolutions.taskscheduler.branchandboundastar.BBAAlgorithm;
 import swiftsolutions.util.Pair;
 
@@ -209,10 +206,8 @@ public class BenchmarkAppRunner {
 
 				}
 				catch(Exception e) {
-<<<<<<< HEAD
-=======
+
 					e.printStackTrace();
->>>>>>> imported updated benchmark and tests (test folder) from branch benchmark-validity-check, and added some temporary debugging output print statements to Schedule.java
 					System.out.println("no solution");
 				}
 
@@ -342,12 +337,14 @@ public class BenchmarkAppRunner {
 
 		public Schedule call() {
 
-<<<<<<< HEAD
-			Algorithm algorithm = new BBAAlgorithm();
-=======
+
+/*			BBAAlgorithm bbaAlgorithm = new BBAAlgorithm();
+			bbaAlgorithm.setProcessors(_processors);
+			Schedule outputSchedule = bbaAlgorithm.execute(_tasks);*/
+
+
 			BBAAlgorithmParallel algorithm = new BBAAlgorithmParallel();
-			algorithm.setCores(4);
->>>>>>> imported updated benchmark and tests (test folder) from branch benchmark-validity-check, and added some temporary debugging output print statements to Schedule.java
+			algorithm.setCores(2); // 2
 			algorithm.setProcessors(_processors);
 			Schedule outputSchedule = algorithm.execute(_tasks);
 

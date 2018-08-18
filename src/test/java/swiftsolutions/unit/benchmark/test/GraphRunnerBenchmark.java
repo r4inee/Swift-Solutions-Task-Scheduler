@@ -41,8 +41,10 @@ public class GraphRunnerBenchmark {
 	@Test
     public void runFullNameGraphs() {
 		
-		BenchmarkAppRunner _runner = new BenchmarkAppRunner(1);
-		BenchmarkParser _benchmarkParser = new BenchmarkParser("C:/Users/User/Documents/uni/306/output_mode1/output_mode1");
+		BenchmarkAppRunner _runner = new BenchmarkAppRunner(2);
+		//"C:\\Users\\Harith\\Desktop\\UoA Resources\\2018\\2018_semester_2\\SOFTENG 306\\projects\\project-1\\SOFTENG306_Project1\\src\\test\\resources"
+
+		BenchmarkParser _benchmarkParser = new BenchmarkParser("C:\\Users\\Harith\\Desktop\\UoA Resources\\2018\\2018_semester_2\\SOFTENG 306\\projects\\project-1\\output_mode1"); //"C:/Users/User/Documents/uni/306/output_mode1/output_mode1"
 		_benchmarkParser.catagoriseFiles();
 		
 		ArrayList<File> nodeGraphs10 = _benchmarkParser.getNodesCatagory().get("10");
