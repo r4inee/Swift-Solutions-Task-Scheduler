@@ -104,10 +104,6 @@ public class Scheduler {
         int numProcessors = _argumentParser.getProcessors();
         int numCores = _argumentParser.getCoresOption().getArgs();
 
-        //TODO: REMOVE
-        this._outputManager.send(new OutputMessage(OutputType.STATUS, "numCores is: " + numCores));
-        //TODO: REMOVE
-
 
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Executing algorithm..."));
 

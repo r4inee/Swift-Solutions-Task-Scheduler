@@ -337,8 +337,8 @@ public class BenchmarkAppRunner {
 
 		public Schedule call() {
 
-
-/*			BBAAlgorithm bbaAlgorithm = new BBAAlgorithm();
+/*
+			BBAAlgorithm bbaAlgorithm = new BBAAlgorithm();
 			bbaAlgorithm.setProcessors(_processors);
 			Schedule outputSchedule = bbaAlgorithm.execute(_tasks);*/
 
