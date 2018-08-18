@@ -2,10 +2,7 @@ package swiftsolutions.gui;
 
 import com.sun.management.OperatingSystemMXBean;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -89,7 +86,7 @@ public class GUIController {
     public static final int END_TIME = 1;
     public static final int NODE_ID = 2;
     public static final int PROC_TIME = 3;
-    public static final int IDLE = -1;
+    public static final int IDLE_NODE_ID = -1;
     public static final int TASK_LENGTH = 4;
 
     public static final String TOP_BAR_BEFORE_START = "-fx-background-color: " + GRAY_COLOR;
@@ -117,13 +114,12 @@ public class GUIController {
 
     public static final int POLL_INTERVAL = 10;
     public static final int TIMER_UPDATE_INTERVAL = 5;
-    public static final int LOAD_UPDATE_INTERVAL = 1000;
-
-    public static final int LOAD_GRAPH_SIZE = 5;
+    public static final int LOAD_UPDATE_INTERVAL = 5;
 
     private long startTime;
     private Timer timerTimer;
     private Timer pollTimer;
+    private List<Timer> loadTimers;
     private VisualAlgorithm thread;
     private Scheduler scheduler;
     private boolean finished;
@@ -161,6 +157,8 @@ public class GUIController {
         // Initial Value
         finished = false;
 
+        loadTimers = new ArrayList<>();
+
         // Set top bar color to gray
         topBar.setStyle(TOP_BAR_BEFORE_START);
 
@@ -172,9 +170,6 @@ public class GUIController {
         start.setOnMouseClicked((MouseEvent event) -> start());
         stop.setOnMouseClicked((MouseEvent event) -> stop());
         write.setOnMouseClicked(event -> write());
-
-        // Initialize CPU and Memory Charts
-        initLoadCharts();
 
         // Initialize schedule table
         scheduleTable.setPlaceholder(new Label(TABLE_PLACEHOLDER_TEXT));
@@ -200,6 +195,8 @@ public class GUIController {
         pollTimer = new Timer();
         // Initialize bar chart
         initBarChart();
+        // Initialize CPU and Memory Charts
+        initLoadCharts();
         // Start the algorithm
         thread.start();
         // Initialize the poll timer task
@@ -257,6 +254,7 @@ public class GUIController {
         // Stop the timers
         timerTimer.cancel();
         pollTimer.cancel();
+        loadTimers.forEach(timer -> timer.cancel());
 
         // Show that the algorithm has been manually stopped
         topBar.setStyle(TOP_BAR_STOPPED);
@@ -299,6 +297,7 @@ public class GUIController {
         // Cancel the timers
         timerTimer.cancel();
         pollTimer.cancel();
+        loadTimers.forEach(timer -> timer.cancel());
 
         // Indicate algorithm successfully completed
         topBar.setStyle(TOP_BAR_SUCCESS);
@@ -367,23 +366,24 @@ public class GUIController {
         x.setOpacity(0);
         chart.setData(data);
         y.setTickUnit(10);
+        x.setTickUnit(1000);
+        chart.setCreateSymbols(false);
+
+        chart.setAnimated(false);
 
         // Set up ticking
         Timer timer = new Timer();
+        loadTimers.add(timer);
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
                 // Get value and time
                 double value = valueFunction.apply(bean);
-                double time = (System.currentTimeMillis() - start) / 1000;
+                double time = (System.currentTimeMillis() - start);
 
                 // Update the view
                 Platform.runLater(() -> {
-                    // Remove previous value if we've progressed far enough
-                    if (data.get(0).getData().size() > LOAD_GRAPH_SIZE) {
-                        data.get(0).getData().remove(0);
-                        x.setLowerBound(data.get(0).getData().get(0).getXValue().doubleValue());
-                    }
+
                     data.get(0).getData().addAll(new XYChart.Data<>(time, value));
                     x.setUpperBound(time);
                 });
@@ -499,7 +499,7 @@ public class GUIController {
                 Integer[] idle = new Integer[TASK_LENGTH];
                 idle[START_TIME] = 0;
                 idle[END_TIME] = proc.get(0)[Schedule.START_TIME];
-                idle[NODE_ID] = IDLE;
+                idle[NODE_ID] = IDLE_NODE_ID;
                 idle[PROC_TIME] = proc.get(0)[Schedule.START_TIME];
                 proc.add(0, idle);
             }
@@ -509,7 +509,7 @@ public class GUIController {
                 if (proc.get(j)[START_TIME].equals(proc.get(j - 1)[START_TIME])) {
                     idle[START_TIME] = proc.get(j - 1)[Schedule.END_TIME];
                     idle[END_TIME] = proc.get(j)[Schedule.START_TIME];
-                    idle[NODE_ID] = IDLE;
+                    idle[NODE_ID] = IDLE_NODE_ID;
                     idle[PROC_TIME] = proc.get(j)[Schedule.START_TIME] - proc.get(j - 1)[Schedule.END_TIME];
                     proc.add(j, idle);
                     j++;
@@ -547,7 +547,7 @@ public class GUIController {
 
         // If the node is idle time, make it transparent, else make it green,
         // insets are for a more visible border between the tasks
-        if (data[NODE_ID] == IDLE) {
+        if (data[NODE_ID] == IDLE_NODE_ID) {
             node.setStyle(BAR_IDLE);
         } else {
             node.setStyle(BAR_TASK);
