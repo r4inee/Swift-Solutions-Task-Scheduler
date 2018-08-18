@@ -114,7 +114,7 @@ public class Scheduler {
         long start = System.currentTimeMillis();
 
 
-        
+
         Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR, numProcessors, numCores);
         _start = System.currentTimeMillis();
        _algorithm = _argumentParser.getVisualizeOption().getArgs() ?

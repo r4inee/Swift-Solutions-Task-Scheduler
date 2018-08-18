@@ -71,9 +71,6 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
     }
 
 
-
-
-
     /**
      * Overrides Algorithm execute
      * See Algorithm#execute()
@@ -114,6 +111,7 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
         for (int i = 0; i < initialSchedule.length; i++) {
             initialSchedule[i][PROCESSOR_INDEX] = EMPTY;
             initialSchedule[i][START_TIME] = EMPTY;
+            initialSchedule[i][END_TIME] = 0;
         }
 
         // Priority queue by bottom level which is also in topological order.
@@ -144,21 +142,25 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
         _fSInit = Math.max(_B / _numProcessors, maxBotLevel);
 
         // Copy to primitive array for FTO.
-        int[] freeTasks = new int[tasks.size()];
-        for (int i = 0; i < freeTasks.length; i++) {
-            freeTasks[i] = initialBound.poll();
+        int[] orderedTasks = new int[tasks.size()];
+        for (int i = 0; i < orderedTasks.length; i++) {
+            orderedTasks[i] = initialBound.poll();
         }
-        // If the task are either all independent or in fixed task order, start the algorithm and will order in BBA.
+
+        // If the task are either all independent or in fixed task order, start the algorithm in FTO.
         int[] fTask = free(initialSchedule, _tasks);
-        if ((isAllIndependent(fTask)) || (fTask.length == (_tasks.length - 1))) {
-            BBA(EMPTY, EMPTY, tasks.size(), 0, procEndTimes, _tasks, initialSchedule, idleTime, true);
+        int[] allTask = _taskMap.keySet().stream().mapToInt(Number::intValue).toArray();
+        int[] independent = isAllIndependent(allTask);
+        int[] fto = isFTO(allTask, initialSchedule, allTask.length);
+        if (independent != null) {
+            FTO(independent, 0, procEndTimes, _tasks, initialSchedule, idleTime);
         } else {
-            if ((fTask.length == 1) && ((_taskMap.get(fTask[0]).getChildTasks().size() == (_tasks.length - 1)))) {
-                BBA(EMPTY, EMPTY, fTask.length, 0, procEndTimes, _tasks, initialSchedule, idleTime, true);
+            if (fto != null) {
+                FTO(fto, 0, procEndTimes, _tasks, initialSchedule, idleTime);
             } else {
                 // Complete an FTO to find initial bound.
-                FTO(freeTasks,0, procEndTimes, _tasks, initialSchedule, idleTime);
-                BBA(EMPTY, EMPTY, fTask.length, 0, procEndTimes, _tasks, initialSchedule, idleTime, false); //Call the recursion algorithm
+                FTO(orderedTasks, 0, procEndTimes, _tasks, initialSchedule, idleTime);
+                BBA(EMPTY, EMPTY, fTask.length, 0, procEndTimes, _tasks, initialSchedule, idleTime); //Call the recursion algorithm
             }
         }
         return convertSchedule(_bestFState);
@@ -183,11 +185,10 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
         private int[][] _clndTasks;
         private int[][] _clndS;
         private int _idleTime;
-        private boolean _fto;
 
 
         private RecursiveBBA(int prevTask, int prevProc, int numFreeTasks,
-                            int depth, int[] clndProcEndTimes, int[][] clndTasks, int[][] clndS, int idleTime, boolean fto) {
+                            int depth, int[] clndProcEndTimes, int[][] clndTasks, int[][] clndS, int idleTime) {
 
             _prevTask = prevTask;
             _prevProc = prevProc;
@@ -197,7 +198,6 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
             _clndTasks = clndTasks;
             _clndS = clndS;
             _idleTime = idleTime;
-            _fto = fto;
 
         }
 
@@ -211,7 +211,30 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
 
             if (freeTasks.length != 0) {
 
-                if (BBAAlgorithmParallel.this.isAllIndependent(freeTasks)) {
+
+                int[] independent = isAllIndependent(freeTasks);
+                // Check if all the left over tasks are independent.
+                if (independent != null) {
+                    BBAAlgorithmParallel.this.FTO(independent, 0, _clndProcEndTimes, _clndTasks, _clndS, _idleTime);
+                    return;
+                }
+
+                // Check if all the left over tasks can be put in FTO
+                Set<Integer> leftOver = new HashSet<>();
+                for (int i = 0; i < _clndS.length; i++) {
+                    if (_clndS[i][PROCESSOR_INDEX] != EMPTY) {
+                        leftOver.add(i);
+                    }
+                }
+
+                int[] unscheduled = leftOver.stream().mapToInt(Number::intValue).toArray();
+                int[] fto = BBAAlgorithmParallel.this.isFTO(unscheduled, _clndS, _numFreeTasks);
+                if ((fto != null) && (leftOver.size() == freeTasks.length)) {
+                    BBAAlgorithmParallel.this.FTO(fto, 0, _clndProcEndTimes, _clndTasks, _clndS, _idleTime);
+                    return;
+                }
+
+/*                if (BBAAlgorithmParallel.this.isAllIndependent(freeTasks)) {
                     Comparator<Integer> c = (Integer o1, Integer o2) -> {
                         Integer o1Process = _tasks[o1][PROC_TIME];
                         Integer o2Process = _tasks[o2][PROC_TIME];
@@ -229,9 +252,9 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
                     }
 
                     //TODO: recursiveFTO doesn't make a difference ??
-/*                   RecursiveFTO recursiveFTO = new RecursiveFTO(orderedTasks, 0, _clndProcEndTimes, _clndTasks, _clndS, _idleTime);
+*//*                   RecursiveFTO recursiveFTO = new RecursiveFTO(orderedTasks, 0, _clndProcEndTimes, _clndTasks, _clndS, _idleTime);
                     recursiveFTO.fork();
-                    recursiveFTO.join();*/
+                    recursiveFTO.join();*//*
                     BBAAlgorithmParallel.this.FTO(orderedTasks, 0, _clndProcEndTimes, _clndTasks, _clndS, _idleTime);
                     return;
 
@@ -314,54 +337,59 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
                                 orderedTasks[i] = queue.poll();
                             }
                             //TODO: recursiveFTO doesn't make a difference ??
-                /*            RecursiveFTO recursiveFTO = new RecursiveFTO(orderedTasks, 0, _clndProcEndTimes, _clndTasks, _clndS, _idleTime);
+                *//*            RecursiveFTO recursiveFTO = new RecursiveFTO(orderedTasks, 0, _clndProcEndTimes, _clndTasks, _clndS, _idleTime);
                             recursiveFTO.fork();
-                            recursiveFTO.join();*/
+                            recursiveFTO.join();*//*
                             BBAAlgorithmParallel.this.FTO(orderedTasks, 0, _clndProcEndTimes, _clndTasks, _clndS, _idleTime);
                             return;
                         }
                     }
 
+                }*/
+
+
+
+
+
+
+                Cache cache = new Cache(BBAAlgorithmParallel.this._numProcessors, _clndS);
+                if (BBAAlgorithmParallel.this._seenSchedules.contains(cache)) {
+                    return; // prune
+                } else {
+                    BBAAlgorithmParallel.this._seenSchedules.add(cache);
                 }
 
-             }
 
+                for (int i = 0; i < freeTasks.length; i++) {
+                    for (int j = 0; j < BBAAlgorithmParallel.this._numProcessors; j++) {
 
-
-
-            Cache cache = new Cache(BBAAlgorithmParallel.this._numProcessors, _clndS);
-            if (BBAAlgorithmParallel.this._seenSchedules.contains(cache)) {
-                return; // prune
-            } else {
-                BBAAlgorithmParallel.this._seenSchedules.add(cache);
-            }
-
-
-            for (int i = 0; i < freeTasks.length; i++) {
-                for (int j = 0; j < BBAAlgorithmParallel.this._numProcessors; j++) {
-
-                    if (j > BBAAlgorithmParallel.this.getFirstEmptyProc(_clndProcEndTimes)) {
-                        break;
-                    }
-                    // Partial Duplicate Detection
-                    if (freeTasks.length == _numFreeTasks) {
-                        if (j < _prevProc) {
-                            continue;
-                        }
-                    }
-                    int taskID = freeTasks[i];
-                    // Node Equivalence
-                    if (_prevTask != EMPTY) {
-                        if (_nodeEquivalence[_prevTask][taskID] == 1) {
+                        // Processor Normalisation
+                        if (j > BBAAlgorithmParallel.this.getFirstEmptyProc(_clndProcEndTimes)) {
                             break;
                         }
+
+                        // Partial Duplicate Detection
+                        if (freeTasks.length == _numFreeTasks) {
+                            if (j < _prevProc) {
+                                continue;
+                            }
+                        }
+
+                        // Task to be scheduled next.
+                        int taskID = freeTasks[i];
+                        // Node Equivalence
+                        if (_prevTask != EMPTY) {
+                            if (_nodeEquivalence[_prevTask][taskID] == 1) {
+                                break;
+                            }
+                        }
+
+                        RecursiveBBACore recursiveBBACore = new RecursiveBBACore(_clndProcEndTimes[j], freeTasks, taskID, j, _prevTask, _prevProc,
+                                _numFreeTasks, _depth, _clndProcEndTimes, _clndTasks, _clndS, _idleTime);
+
+                        recursiveBBACore.fork();
+
                     }
-
-                    RecursiveBBACore recursiveBBACore = new RecursiveBBACore(_clndProcEndTimes[j], freeTasks, taskID, j, _prevTask, _prevProc,
-                            _numFreeTasks, _depth, _clndProcEndTimes, _clndTasks, _clndS, _idleTime);
-
-                    recursiveBBACore.fork();
-
                 }
             }
 
@@ -457,8 +485,8 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
             _clndS[_taskID][START_TIME] = taskStart;
             _clndS[_taskID][END_TIME] = taskStart + _clndTasks[_taskID][PROC_TIME];
             _clndProcEndTimes[_procID] = _clndS[_taskID][END_TIME];
-            for (int dj = 0; dj < _dependencies.length; dj++) {
-                if (_dependencies[dj][_taskID] == 1) {
+            for (int dj = 0; dj < BBAAlgorithmParallel.this._dependencies.length; dj++) {
+                if (BBAAlgorithmParallel.this._dependencies[dj][_taskID] == 1) {
                     _clndTasks[dj][NUM_DEP]--;
                 }
             }
@@ -476,7 +504,7 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
             // if cost is lower than B(est) and depth is max, recursive call
             if (cost(_clndS, _clndProcEndTimes, _taskID, offset, _idleTime) <= _B && _depth < _tasks.length) {
                 RecursiveBBA recursiveBBA = new RecursiveBBA(_taskID, _procID, _numFreeTasks, _depth, _clndProcEndTimes,
-                        _clndTasks, _clndS, _idleTime, false);
+                        _clndTasks, _clndS, _idleTime);
 
                 recursiveBBA.fork();
             }
@@ -503,11 +531,11 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
      * @param depth The current recursive depth
      */
     private void BBA(int previousTask, int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s,
-                     int idleTime, boolean fto) {
+                     int idleTime) {
 
 
         RecursiveBBA recursiveBBA = new RecursiveBBA(previousTask, previousProcessor, numFreeTasks, depth,
-                procEndTimes, tasks, s, idleTime, fto);
+                procEndTimes, tasks, s, idleTime);
 
         _customPool.invoke(recursiveBBA);
 
@@ -519,9 +547,9 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
      *
      * @param orderedTasks A primitive priority queue off ordered tasks
      * @param procEndTimes Index pointing to element in the priority queue for current state
-     * @param tasks Reference to the map of tasks
-     * @param s The current schedule
-     * @param idleTime The cumulative idle time
+     * @param tasks        Reference to the map of tasks
+     * @param s            The current schedule
+     * @param idleTime     The cumulative idle time
      */
     private void FTO(int[] orderedTasks, int index, int[] procEndTimes, int[][] tasks, int[][] s, int idleTime) {
         int task = orderedTasks[index];
@@ -578,7 +606,7 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
             }
 
             // Check if all the tasks has been ordered, FTO guarantees optimality.
-            if (index == (orderedTasks.length-1)) {
+            if (index == (orderedTasks.length - 1)) {
                 // Update the current bound.
                 int bound = cost(clonedS, clonedProcEndTimes, task, offset, idleTime);
                 if (bound <= _B) {
@@ -587,7 +615,7 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
                 }
             } else {
                 // Recursive call to schedule next task
-                FTO(orderedTasks, index+1, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
+                FTO(orderedTasks, index + 1, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
             }
 
             // Reset the offseted values.
@@ -741,7 +769,7 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
     /**
      * Recursive function that updates the bottom levels of the nodes in the input set and all the nodes of that parent.
      *
-     * @param nodes The set of tasks
+     * @param nodes              The set of tasks
      * @param currentBottomLevel The current bottom level calculated
      */
     private void getBottomLevels(Set<Integer> nodes, int currentBottomLevel) {
@@ -760,11 +788,11 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
     /**
      * Based off the cost function f described where f = max{Initial(s), idle-time(s), bottom-level(s), DRT(s)}.
      *
-     * @param s The current complete schedule
-     * @param procEndTimes The completed processor end times
-     * @param taskID The last task to be scheduled
+     * @param s             The current complete schedule
+     * @param procEndTimes  The completed processor end times
+     * @param taskID        The last task to be scheduled
      * @param dataReadyTime Communication delay from parents offsets
-     * @param idleTime The cumulative idle time
+     * @param idleTime      The cumulative idle time
      * @return The total cost of the input schedule
      */
     private int cost(int[][] s, int[] procEndTimes, int taskID, int dataReadyTime, int idleTime) {
@@ -793,7 +821,7 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
      * This method takes in a schedule and returns an array of free tasks which are tasks that are not already
      * scheduled and there parents have all been scheduled.
      *
-     * @param s The current schedule
+     * @param s     The current schedule
      * @param tasks The map of tasks relationships
      * @return The current list of available tasks
      */
@@ -875,37 +903,75 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
     }
 
     /**
-     * Checks if all the left over tasks are independent from each other.
+     * Checks if all the available tasks are independent from each other.
      *
-     * @param freeTask The list of available tasks at current iteration of the algorithm
+     * @param freeTasks The list of available tasks at current iteration of the algorithm
      * @return true if the available tasks are all independent, else false
      */
-    private boolean isAllIndependent(int[] freeTask) {
-        for (int i = 0; i < freeTask.length; i++) {
-            if (_taskMap.get(freeTask[i]).getParentTasks().size() != 0) {
-                return false;
+    private int[] isAllIndependent(int[] freeTasks) {
+        for (int i = 0; i < freeTasks.length; i++) {
+            if (_taskMap.get(freeTasks[i]).getParentTasks().size() != 0) {
+                return null;
             }
-            if (_taskMap.get(freeTask[i]).getChildTasks().size() != 0) {
-                return false;
+            if (_taskMap.get(freeTasks[i]).getChildTasks().size() != 0) {
+                return null;
             }
         }
-        return true;
+        // Order task processing time as communication time will all be zero.
+        Comparator<Integer> c = (Integer o1, Integer o2) -> {
+            Integer o1Process = _tasks[o1][PROC_TIME];
+            Integer o2Process = _tasks[o2][PROC_TIME];
+            return o2Process.compareTo(o1Process);
+        };
+        Queue<Integer> queue = new PriorityQueue<>(freeTasks.length, c);
+        for (int i = 0; i < freeTasks.length; i++) {
+            queue.add(freeTasks[i]);
+        }
+        int[] orderedTasks = new int[freeTasks.length];
+        for (int i = 0; i < freeTasks.length; i++) {
+            orderedTasks[i] = queue.poll();
+        }
+        return orderedTasks;
     }
 
     /**
      * Checks if the available tasks can be scheduled in a fixed order.
+     *
      * @param freeTasks The list of available tasks at the current iteration of the algorithm
-     * @param schedule The current schedule
+     * @param s         The current schedule
      * @return true if the available tasks can be order it FTO, else false
      */
-    private boolean isFTO(int[] freeTasks, int[][] schedule) {
-        for (int i = 0; i < freeTasks.length; i++) {
-            int parents = _taskMap.get(freeTasks[i]).getParentTasks().size();
-            int children = _taskMap.get(freeTasks[i]).getChildTasks().size();
+    private int[] isFTO(int[] freeTasks, int[][] s, int numFreeTasks) {
+        if (freeTasks.length != numFreeTasks) {
+            return null;
+        }
+        int root = EMPTY;
+        int leaf = EMPTY;
+        // Check if the tasks are in FTO and order by non-decreasing DRT then by non-increasing out edge costs.
+        Comparator<Integer> c;
 
-            // Check if all nodes has only one or less parent and one or less child for detecting Fork+Join FTO
-            if ((parents <= 1) && (children <= 1)) {
-                if ((parents == 0) && (children == 0)) {
+        // This section is for checking initial FTO
+        if (freeTasks.length == _taskMap.size()) {
+            for (int i = 0; i < freeTasks.length; i++) {
+                int parents = _taskMap.get(freeTasks[i]).getParentTasks().size();
+                int children = _taskMap.get(freeTasks[i]).getChildTasks().size();
+                if ((parents > 1) && (children > 1)) {
+                    return null;
+                } else if (children > 1) {
+                    if (root == EMPTY) {
+                        root = i;
+                        continue;
+                    } else {
+                        return null;
+                    }
+                } else if (parents > 1) {
+                    if (leaf == EMPTY) {
+                        leaf = i;
+                        continue;
+                    } else {
+                        return null;
+                    }
+                } else if ((parents == 0) && (children == 0)) {
                     continue;
                 }
 
@@ -917,38 +983,196 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
                         if (numChild == 1) {
                             int child = _taskMap.get(freeTasks[j]).getChildTasks().iterator().next();
                             if (child != tChild) {
-                                return false;
+                                return null;
                             }
-                        } else if (numChild > 1) {
-                            return false;
                         }
                     }
                 }
 
                 // Check all nodes have the same parent for detecting Fork FTO.
                 if (parents == 1) {
-                    int proc = EMPTY;
-                    for (int j = 0; j < freeTasks.length; j++) {
-                        int numParent = _taskMap.get(freeTasks[j]).getParentTasks().size();
+                    int tParent = _taskMap.get(i).getParentTasks().iterator().next();
+                    for (int j = 0; j < _taskMap.size(); j++) {
+                        int numParent = _taskMap.get(j).getParentTasks().size();
                         if (numParent == 1) {
-                            int parent = _taskMap.get(freeTasks[j]).getParentTasks().iterator().next();
-                            if (proc == EMPTY) {
-                                proc = schedule[parent][PROCESSOR_INDEX];
-                            } else {
-                                if (proc != schedule[parent][PROCESSOR_INDEX]) {
-                                    return false;
-                                }
+                            int parent = _taskMap.get(j).getParentTasks().iterator().next();
+                            if (parent != tParent) {
+                                return null;
                             }
-                        } else if (numParent > 1) {
-                            return false;
                         }
                     }
                 }
-            } else {
-                return false;
+            }
+            c = (o1, o2) -> {
+                Integer parentO1DRT = 0;
+                int o1Parents = _taskMap.get(o1).getParentTasks().size();
+                int o1Children = _taskMap.get(o1).getChildTasks().size();
+                Integer parentO2DRT = 0;
+                int o2Parents = _taskMap.get(o2).getParentTasks().size();
+                int o2Children = _taskMap.get(o2).getChildTasks().size();
+
+                if (o1Parents > 1) {
+                    return 1;
+                } else if (o1Children > 1) {
+                    return -1;
+                } else if (o2Children > 1) {
+                    return 1;
+                } else if (o2Parents > 1) {
+                    return -1;
+                }
+
+                if (o1Parents == 1) {
+                    int parent = _taskMap.get(o1).getParentTasks().iterator().next();
+                    parentO1DRT = _communicationCosts[parent][o1];
+                }
+                if (o2Parents == 1) {
+                    int parent = _taskMap.get(o2).getParentTasks().iterator().next();
+                    parentO2DRT = _communicationCosts[parent][o2];
+                }
+
+                if (parentO1DRT.intValue() == parentO2DRT.intValue()) {
+                    Integer outO1 = 0;
+                    Integer outO2 = 0;
+                    if (o1Children == 1) {
+                        int child = _taskMap.get(o1).getChildTasks().iterator().next();
+                        outO1 = _communicationCosts[o1][child];
+                    }
+                    if (o2Children == 1) {
+                        int child = _taskMap.get(o2).getChildTasks().iterator().next();
+                        outO2 = _communicationCosts[o2][child];
+                    }
+                    return outO2.compareTo(outO1);
+                }
+                return parentO1DRT.compareTo(parentO2DRT);
+            };
+
+        } else {
+            // This section is for checking left over task FTO
+            for (int i = 0; i < freeTasks.length; i++) {
+                int parents = _taskMap.get(freeTasks[i]).getParentTasks().size();
+                int children = _taskMap.get(freeTasks[i]).getChildTasks().size();
+
+                // Check if all nodes has only one or less parent and one or less child for detecting Fork+Join FTO
+                if ((parents <= 1) && (children <= 1)) {
+                    if ((parents == 0) && (children == 0)) {
+                        continue;
+                    }
+
+                    // Check all nodes have the same children for detecting Join FTO.
+                    if (children == 1) {
+                        int tChild = _taskMap.get(freeTasks[i]).getChildTasks().iterator().next();
+                        for (int j = 0; j < freeTasks.length; j++) {
+                            int numChild = _taskMap.get(freeTasks[j]).getChildTasks().size();
+                            if (numChild == 1) {
+                                int child = _taskMap.get(freeTasks[j]).getChildTasks().iterator().next();
+                                if (child != tChild) {
+                                    return null;
+                                }
+                            } else if (numChild > 1) {
+                                return null;
+                            }
+                        }
+                    }
+
+                    // Check all nodes have the same parent for detecting Fork FTO.
+                    if (parents == 1) {
+                        int proc = EMPTY;
+                        for (int j = 0; j < freeTasks.length; j++) {
+                            int numParent = _taskMap.get(freeTasks[j]).getParentTasks().size();
+                            if (numParent == 1) {
+                                int parent = _taskMap.get(freeTasks[j]).getParentTasks().iterator().next();
+                                if (proc == EMPTY) {
+                                    proc = s[parent][PROCESSOR_INDEX];
+                                } else {
+                                    if (proc != s[parent][PROCESSOR_INDEX]) {
+                                        return null;
+                                    }
+                                }
+                            } else if (numParent > 1) {
+                                return null;
+                            }
+                        }
+                    }
+                } else {
+                    return null;
+                }
+            }
+            c = (o1, o2) -> {
+                Integer parentO1DRT = 0;
+                int o1Parents = _taskMap.get(o1).getParentTasks().size();
+                int o1Children = _taskMap.get(o1).getChildTasks().size();
+                Integer parentO2DRT = 0;
+                int o2Parents = _taskMap.get(o2).getParentTasks().size();
+                int o2Children = _taskMap.get(o2).getChildTasks().size();
+
+                if (o1Parents == 1) {
+                    int parent = _taskMap.get(o1).getParentTasks().iterator().next();
+                    parentO1DRT = s[parent][END_TIME] + _communicationCosts[parent][o1];
+                }
+                if (o2Parents == 1) {
+                    int parent = _taskMap.get(o2).getParentTasks().iterator().next();
+                    parentO2DRT = s[parent][END_TIME] + _communicationCosts[parent][o2];
+                }
+
+                if (parentO1DRT.intValue() == parentO2DRT.intValue()) {
+                    Integer outO1 = 0;
+                    Integer outO2 = 0;
+                    if (o1Children == 1) {
+                        int child = _taskMap.get(o1).getChildTasks().iterator().next();
+                        outO1 = _communicationCosts[o1][child];
+                    }
+                    if (o2Children == 1) {
+                        int child = _taskMap.get(o2).getChildTasks().iterator().next();
+                        outO2 = _communicationCosts[o2][child];
+                    }
+                    return outO2.compareTo(outO1);
+                }
+                return parentO1DRT.compareTo(parentO2DRT);
+            };
+        }
+
+        // Order tasks into a priority queue
+        Queue<Integer> queue = new PriorityQueue<>(freeTasks.length, c);
+        for (int j = 0; j < freeTasks.length; j++) {
+            queue.add(freeTasks[j]);
+        }
+
+        // Verification step that all nodes are still in non-decreasing out edge costs.
+        boolean order = true;
+        int[] verify = new int[queue.size()];
+        if (queue.size() > 1) {
+            for (int j = 0; j < verify.length; j++) {
+                verify[j] = queue.poll();
+                if (j > 0) {
+                    int o1 = verify[j - 1];
+                    int o2 = verify[j];
+                    if (o1 == root) {
+                        continue;
+                    } else if (o2 == leaf) {
+                        continue;
+                    }
+
+                    int outO1 = 0;
+                    int outO2 = 0;
+                    if (_taskMap.get(o1).getChildTasks().size() == 1) {
+                        outO1 = _communicationCosts[o1][_taskMap.get(o1).getChildTasks().iterator().next()];
+                    }
+                    if (_taskMap.get(o2).getChildTasks().size() == 1) {
+                        outO2 = _communicationCosts[o2][_taskMap.get(o2).getChildTasks().iterator().next()];
+                    }
+
+                    if (outO2 > outO1) {
+                        return null;
+                    }
+                }
             }
         }
-        return true;
+        // If the order is consistent, then order in FTO
+        if (order) {
+            return verify;
+        } else {
+            return null;
+        }
     }
 
     /**
