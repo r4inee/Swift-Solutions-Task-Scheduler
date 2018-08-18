@@ -7,6 +7,7 @@ import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
 import swiftsolutions.taskscheduler.branchandboundastar.BBAAlgorithm;
+import swiftsolutions.taskscheduler.branchandboundastarparallel.BBAAlgorithmParallel;
 import swiftsolutions.util.Pair;
 
 import java.util.HashMap;
@@ -26,7 +27,8 @@ public class ValidationTest {
             e.printStackTrace();
         }
 
-        Algorithm algorithm = new BBAAlgorithm();
+        BBAAlgorithmParallel algorithm = new BBAAlgorithmParallel();
+        algorithm.setCores(4);
         algorithm.setProcessors(2);
         Schedule outputSchedule = algorithm.execute(taskMap);
 
@@ -40,7 +42,8 @@ public class ValidationTest {
         }
         assertEquals(maxEndTime, 28);
 
-        algorithm = new BBAAlgorithm();
+        algorithm = new BBAAlgorithmParallel();
+        algorithm.setCores(4);
         algorithm.setProcessors(4);
         outputSchedule = algorithm.execute(taskMap);
 

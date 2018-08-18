@@ -104,11 +104,17 @@ public class Scheduler {
         int numProcessors = _argumentParser.getProcessors();
         int numCores = _argumentParser.getCoresOption().getArgs();
 
+        //TODO: REMOVE
+        this._outputManager.send(new OutputMessage(OutputType.STATUS, "numCores is: " + numCores));
+        //TODO: REMOVE
+
+
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Executing algorithm..."));
 
         long start = System.currentTimeMillis();
 
 
+        
         Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR, numProcessors, numCores);
         _start = System.currentTimeMillis();
        _algorithm = _argumentParser.getVisualizeOption().getArgs() ?
@@ -129,6 +135,7 @@ public class Scheduler {
                 gui.setScheduler(this);
             });
             this._outputManager.send(new OutputMessage(OutputType.SUCCESS, "GUI Started!"));
+
         } else {
             executeAlgorithm();
         }
