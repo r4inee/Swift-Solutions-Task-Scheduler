@@ -1,6 +1,7 @@
 package swiftsolutions.taskscheduler.branchandboundastarparallel;
 
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
+import swiftsolutions.interfaces.taskscheduler.ParallelAlgorithm;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
 import swiftsolutions.taskscheduler.branchandboundastar.Cache;
@@ -11,7 +12,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.stream.Collectors;
 
-public class BBAAlgorithmParallel implements Algorithm {
+public class BBAAlgorithmParallel implements ParallelAlgorithm {
     private int _numProcessors;
 
     private int[][] _tasks; // row represents the task, cols represent { proc time, number of dependencies, bottom level}
@@ -37,7 +38,8 @@ public class BBAAlgorithmParallel implements Algorithm {
 
 
     // parallelization
-    ForkJoinPool _commonPool;
+    private int _numCores;
+    ForkJoinPool _customPool;
 
 
     public BBAAlgorithmParallel() {
@@ -55,6 +57,23 @@ public class BBAAlgorithmParallel implements Algorithm {
         _numProcessors = processors;
     }
 
+
+    /**
+     *
+     * Overrides ParallelAlgorithm's setCores
+     * See ParallelAlgorithm#setCores()
+     *
+     * @param cores
+     * */
+    @Override
+    public void setCores(int cores) {
+        _numCores = cores;
+    }
+
+
+
+
+
     /**
      * Overrides Algorithm execute
      * See Algorithm#execute()
@@ -69,7 +88,7 @@ public class BBAAlgorithmParallel implements Algorithm {
         // for Fork/Join task execution
         // TODO: need to configure no. of physical processors available on machine manually,
         // TODO: or is it done automatically ??
-        _commonPool = ForkJoinPool.commonPool();
+        _customPool = new ForkJoinPool(_numCores);
 
 
         _taskMap = tasks;
@@ -490,7 +509,7 @@ public class BBAAlgorithmParallel implements Algorithm {
         RecursiveBBA recursiveBBA = new RecursiveBBA(previousTask, previousProcessor, numFreeTasks, depth,
                 procEndTimes, tasks, s, idleTime, fto);
 
-        _commonPool.invoke(recursiveBBA);
+        _customPool.invoke(recursiveBBA);
 
     }
 
