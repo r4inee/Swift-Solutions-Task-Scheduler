@@ -22,6 +22,8 @@ Optional Flags:
 
 &nbsp;&nbsp;&nbsp;&nbsp;-o OUTPUT&nbsp;&nbsp;&nbsp;&nbsp;output file is named OUTPUT (default is INPUT-output.dot)
 
+&nbsp;&nbsp;&nbsp;&nbsp;-verbose &nbsp;&nbsp;&nbsp;&nbsp;show the debug messages
+
 This program will output a dot file that represents the optimal schedule. The nodes will have properties "Start" and "Processor", which represent the start time and processor that the task has been scheduled on.
 
 ## Building Project from Source Code
