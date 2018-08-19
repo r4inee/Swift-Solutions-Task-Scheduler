@@ -1,4 +1,4 @@
-package swiftsolutions.unit;
+package swiftsolutions.integration;
 
 import org.junit.Test;
 import swiftsolutions.exceptions.InputException;
@@ -15,6 +15,9 @@ import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
 
+/**
+ * Tests that the scheduler provides valid schedules.
+ */
 public class ValidationTest {
 
     @Test

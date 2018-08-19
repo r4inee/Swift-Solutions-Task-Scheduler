@@ -1,4 +1,4 @@
-package swiftsolutions.unit;
+package swiftsolutions.integration;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -10,7 +10,7 @@ import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithm;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Created by Harith on 03/08/2018.
+ * Tests that the scheduling algorithm factory
  */
 public class SchedulingAlgorithmFactoryTest {
 

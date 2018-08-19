@@ -4,9 +4,8 @@ import java.io.Serializable;
 
 /**
  *  This is a generic class used to represent a pair object in java.
- *  Created by Winston on 8/2/2018.
- *  @param <A>
- *  @param <B>
+ *  @param <A> the type of the first value
+ *  @param <B> the type of the second value
  */
 public class Pair<A,B> implements Serializable{
         private A _a;
@@ -17,19 +16,26 @@ public class Pair<A,B> implements Serializable{
             _b = b;
         }
 
-        public A getA(){
+    /**
+     * @return the value of A
+     */
+    public A getA(){
             return _a;
         }
-        public B getB(){
+
+    /**
+     * @return the value of B
+     */
+    public B getB(){
             return _b;
         }
 
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            Pair pair = (Pair) obj;
-            return (pair.getA().equals(_a) && pair.getB().equals(_b));
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
         }
+        Pair pair = (Pair) obj;
+        return (pair.getA().equals(_a) && pair.getB().equals(_b));
+    }
 }

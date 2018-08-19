@@ -14,6 +14,9 @@ import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+/**
+ * Algorithm that will run BBA* in parallel and in the GUI. See VisualAlgorithm. See ParallelAlgorithm.
+ */
 public class BBAAlgorithmParallelVisual extends VisualAlgorithm implements ParallelAlgorithm {
     private int _numProcessors;
 
@@ -32,7 +35,6 @@ public class BBAAlgorithmParallelVisual extends VisualAlgorithm implements Paral
     private volatile int _validSchedules;
     private volatile int _pruned;
     private volatile boolean _done;
-    private volatile Schedule _optimalSchedule;
 
     public static final int EMPTY = -1;
     public static final int SCHEDULE_COL_SIZE = 3;
@@ -367,7 +369,7 @@ public class BBAAlgorithmParallelVisual extends VisualAlgorithm implements Paral
      */
     private void BBA(int previousTask, int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s,
                      int idleTime) {
-
+        _branches++;
         RecursiveBBA recursiveBBA = new RecursiveBBA(previousTask, previousProcessor, numFreeTasks, depth,
                 procEndTimes, tasks, s, idleTime);
         _customPool.invoke(recursiveBBA);
@@ -937,7 +939,7 @@ public class BBAAlgorithmParallelVisual extends VisualAlgorithm implements Paral
 
     @Override
     public int getUpperbound() {
-        return _B.get();
+        return _B == null ? 0 : _B.get();
     }
 
     @Override

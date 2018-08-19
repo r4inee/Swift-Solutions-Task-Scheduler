@@ -91,7 +91,6 @@ public class BNBAlgorithm implements Algorithm {
 
     /**
      * Recursive function to get bottom levels
-     *
      * @param nodes           nodes where all the children nodes bottom levels have already been calculated
      * @param currBottomLevel the current path length
      */
@@ -110,7 +109,6 @@ public class BNBAlgorithm implements Algorithm {
 
     /**
      * Recursive depth-first search branch and bound algorithm.
-     *
      * @param tasks      tasks that have not been scheduled
      * @param upperBound the current best schedule founds cost function
      * @param schedule   the current schedule
@@ -317,7 +315,7 @@ public class BNBAlgorithm implements Algorithm {
 
     /**
      * Notify children that its parent has been scheduled
-     *
+     * Notify children that its parent has been scheduled
      * @param task  task being scheduled
      * @param tasks map of unscheduled tasks
      */
@@ -331,7 +329,6 @@ public class BNBAlgorithm implements Algorithm {
 
     /**
      * Get an estimate for the lower bound cost of a schedule
-     *
      * @param schedule the schedule that we want the lower bound of.
      * @return the lower bound of the schedule.
      */

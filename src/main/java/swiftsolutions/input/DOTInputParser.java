@@ -11,6 +11,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.*;
 
+/**
+ * Parses the input dot file into  a mapping from task id to task information to be used by the scheduler.
+ */
 public class DOTInputParser implements InputParser {
 
     private GraphParser _parser;
@@ -22,7 +25,7 @@ public class DOTInputParser implements InputParser {
     /**
      * This is a method which check if the file exist in the location supplied in the constructor or setter.
      * @return A set of object representing each of the task needed to be scheduled.
-     * @throws InputException
+     * @throws InputException if the input DOT file was malformed.
      */
     @Override
     public Map<Integer, Task> parse(String filename) throws InputException {
@@ -45,7 +48,7 @@ public class DOTInputParser implements InputParser {
 
     /**
      * This is a method which parses the GraphNode objects from the input .dot file.
-     * @throws InputException
+     * @throws InputException if the node information was malformed.
      */
     private void parseNodes() throws InputException {
         int nodeID = 0;
@@ -68,7 +71,7 @@ public class DOTInputParser implements InputParser {
 
     /**
      * This is a method which parses the GraphEdge objects from the input .dot file.
-     * @throws InputException
+     * @throws InputException if the edge information was malformed.
      */
     private void parseEdges() throws InputException {
         // Looping through each of the nodes

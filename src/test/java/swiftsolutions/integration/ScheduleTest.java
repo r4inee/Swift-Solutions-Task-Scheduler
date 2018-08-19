@@ -1,4 +1,4 @@
-package swiftsolutions.unit;
+package swiftsolutions.integration;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -13,11 +13,11 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Created by Harith on 03/08/2018.
+ * Tests the schedule data structure
  */
 public class ScheduleTest {
 
-    // test schedules
+    // Test schedules
     private Schedule _schedule1;
     private Schedule _schedule2;
 

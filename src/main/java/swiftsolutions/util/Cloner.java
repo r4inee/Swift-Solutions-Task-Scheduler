@@ -3,9 +3,16 @@ package swiftsolutions.util;
 import java.io.*;
 
 /**
- * Created by Winston on 8/2/2018.
+ * Cloner to create a deep copy of objects.
  */
 public class Cloner {
+
+    /**
+     * Creates a clone of the input object.
+     * @param orig original object
+     * @param <T> the type of the original object
+     * @return a clone of the original object.
+     */
     public <T> T  copy(T orig) {
         T obj = null;
         try {

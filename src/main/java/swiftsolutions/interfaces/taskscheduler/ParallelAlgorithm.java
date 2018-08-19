@@ -5,5 +5,8 @@ package swiftsolutions.interfaces.taskscheduler;
  * See Algorithm
  */
 public interface ParallelAlgorithm extends Algorithm {
-    public void setCores(int cores);
+    /**
+     * @param cores the amount of threads to be created by the parallel algorithm
+     */
+    void setCores(int cores);
 }
