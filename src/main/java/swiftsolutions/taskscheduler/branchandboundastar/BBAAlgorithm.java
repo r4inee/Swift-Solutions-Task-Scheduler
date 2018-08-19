@@ -113,7 +113,7 @@ public class BBAAlgorithm implements Algorithm {
         }
 
         // Finding a suitable starting bound for the algorithm.
-        _fSInit = _B / _numProcessors > maxBotLevel ? _B / _numProcessors : maxBotLevel;
+        _fSInit = (_B / _numProcessors) > maxBotLevel ? _B / _numProcessors : maxBotLevel;
         _B = Integer.MAX_VALUE;
 
         // Copy to primitive array for FTO.
@@ -156,7 +156,7 @@ public class BBAAlgorithm implements Algorithm {
         if (freeTasks.length != 0) {
             int[] independent = isAllIndependent(freeTasks);
             // Check if all the left over tasks are independent.
-            if (independent != null) {
+            if ((independent != null) && (freeTasks.length > 1)) {
                 FTO(independent, 0, procEndTimes, tasks, s, idleTime);
                 return;
             }
@@ -170,7 +170,7 @@ public class BBAAlgorithm implements Algorithm {
             }
             int[] unscheduled = leftOver.stream().mapToInt(Number::intValue).toArray();
             int[] fto = isFTO(unscheduled, s, freeTasks.length);
-            if (fto != null) {
+            if ((fto != null) && (freeTasks.length > 1)) {
                 FTO(fto, 0, procEndTimes, tasks, s, idleTime);
                 return;
             }

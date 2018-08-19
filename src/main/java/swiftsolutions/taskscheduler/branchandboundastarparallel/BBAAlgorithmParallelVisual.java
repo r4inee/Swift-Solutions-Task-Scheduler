@@ -218,7 +218,7 @@ public class BBAAlgorithmParallelVisual extends VisualAlgorithm implements Paral
             if (freeTasks.length != 0) {
                 int[] independent = isAllIndependent(freeTasks);
                 // Check if all the left over tasks are independent.
-                if (independent != null) {
+                if ((independent != null) && (freeTasks.length > 1)) {
                     FTO(independent, 0, _procEndTimes, _tasks, _s, _idleTime);
                     return;
                 }
@@ -231,8 +231,8 @@ public class BBAAlgorithmParallelVisual extends VisualAlgorithm implements Paral
                     }
                 }
                 int[] unscheduled = leftOver.stream().mapToInt(Number::intValue).toArray();
-                int[] fto = isFTO(unscheduled, _s, _numFreeTasks);
-                if ((fto != null) && (leftOver.size() == freeTasks.length)) {
+                int[] fto = isFTO(unscheduled, _s, freeTasks.length);
+                if ((fto != null) && (freeTasks.length > 1)) {
                     FTO(fto, 0, _procEndTimes, _tasks, _s, _idleTime);
                     return;
                 }

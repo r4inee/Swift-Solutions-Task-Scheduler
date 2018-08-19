@@ -178,7 +178,7 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
         if (freeTasks.length != 0) {
             int[] independent = isAllIndependent(freeTasks);
             // Check if all the left over tasks are independent.
-            if (independent != null) {
+            if ((independent != null) && (freeTasks.length > 1)) {
                 FTO(independent, 0, procEndTimes, tasks, s, idleTime);
                 return;
             }
@@ -192,7 +192,7 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
             }
             int[] unscheduled = leftOver.stream().mapToInt(Number::intValue).toArray();
             int[] fto = isFTO(unscheduled, s, freeTasks.length);
-            if (fto != null) {
+            if ((fto != null) && (freeTasks.length > 1)) {
                 FTO(fto, 0, procEndTimes, tasks, s, idleTime);
                 return;
             }
