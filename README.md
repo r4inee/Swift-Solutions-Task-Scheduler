@@ -1,9 +1,13 @@
 # Swift Solutions Task Scheduler
 
 ## Team Members
-| Name             | GitHub |
-| ---------------- | ------------ |
-| Winston Zhao | @winstonzhao |
+| Name             | GitHub | UoA UPI
+| ---------------- | ------------ | --------- |
+| Winston Zhao | @winstonzhao | wzha539 |
+| Simon Su | @sloushsu | zsu801 |
+| Harith Wannigama | @WanniCode | hwan678 |
+| Bowen Zheng | @bowenzheng98 | tzhe946 |
+| Kerwin Sun | @KerwinSun | ksun182 |
 
 ## Overview
 A graph in DOT format that represents that the multiple task scheduling with communication costs input is required. The nodes and edges should have weights that represent, processing time and communication costs respectively. The scheduler will find the optimal schedule that can minimize the time used to do all the tasks.
@@ -23,4 +27,13 @@ This program will output a dot file that represents the optimal schedule. The no
 ## Building Project from Source Code
 In an IDE with Maven installed, run the Maven clean and install goals. This will generate a .jar file in the target folder.
 This jar is ready to run.
+
+## Where to Find Information
+ Wiki (See side bar):
+ - Meeting Minutes
+ - Decisions
+ - Background Research
+ - Documentation on the classes, their functions and their purposes
+ - Dependencies (External Libraries) used (or lack thereof)
+ - Development Workflow
 
