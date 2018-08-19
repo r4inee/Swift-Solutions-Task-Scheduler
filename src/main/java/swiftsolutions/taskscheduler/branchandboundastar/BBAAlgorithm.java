@@ -114,6 +114,7 @@ public class BBAAlgorithm implements Algorithm {
 
         // Finding a suitable starting bound for the algorithm.
         _fSInit = Math.max(_B / _numProcessors, maxBotLevel);
+        _B = Integer.MAX_VALUE;
 
         // Copy to primitive array for FTO.
         int[] orderedTasks = new int[tasks.size()];
@@ -168,8 +169,8 @@ public class BBAAlgorithm implements Algorithm {
                 }
             }
             int[] unscheduled = leftOver.stream().mapToInt(Number::intValue).toArray();
-            int[] fto = isFTO(unscheduled, s, numFreeTasks);
-            if ((fto != null) && (leftOver.size() == freeTasks.length)) {
+            int[] fto = isFTO(unscheduled, s, freeTasks.length);
+            if (fto != null) {
                 FTO(fto, 0, procEndTimes, tasks, s, idleTime);
                 return;
             }
@@ -256,14 +257,11 @@ public class BBAAlgorithm implements Algorithm {
                     depth++;
 
                     // if cost is lower than B(est) and depth is max, set current best, go back up tree
-                    if (depth == _tasks.length) {
-
-                    }
-
-                    if (cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime) <= _B) {
+                    int cost = cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime);
+                    if (cost < _B) {
                         if (depth == _tasks.length) {
                             _bestFState = clonedS; // clonedS
-                            _B = cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime);
+                            _B = cost;
                         } else {
                             // if cost is lower than B(est) and depth is max, recursive call
                             BBA(taskID, j, numFreeTasks, depth, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
@@ -344,17 +342,15 @@ public class BBAAlgorithm implements Algorithm {
                 }
             }
 
-            // Check if all the tasks has been ordered, FTO guarantees optimality.
-            if (index == (orderedTasks.length - 1)) {
-                // Update the current bound.
-                int bound = cost(clonedS, clonedProcEndTimes, task, offset, idleTime);
-                if (bound <= _B) {
+            int bound = cost(clonedS, clonedProcEndTimes, task, offset, idleTime);
+            if (bound < _B) {
+                if (index == (orderedTasks.length - 1)) {
+                    // Update the current bound.
                     _bestFState = clonedS; // clonedS
                     _B = bound;
+                } else {
+                    FTO(orderedTasks, index + 1, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
                 }
-            } else {
-                // Recursive call to schedule next task
-                FTO(orderedTasks, index + 1, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
             }
 
             // Reset the offseted values.
