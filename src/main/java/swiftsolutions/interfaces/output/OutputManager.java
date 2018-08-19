@@ -28,4 +28,9 @@ public interface OutputManager {
      * @param status is the variable that indicates whether we want to see debug messages.
      */
     void setVerbose(boolean status);
+
+    /**
+     * @param status is the variable that indicates whether we want to see colored messages.
+     */
+    void setColor(boolean status);
 }
