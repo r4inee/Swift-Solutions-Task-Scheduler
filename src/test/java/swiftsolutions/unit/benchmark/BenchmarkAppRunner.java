@@ -3,26 +3,27 @@ package swiftsolutions.unit.benchmark;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.lang.management.ManagementFactory;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import com.sun.management.OperatingSystemMXBean;
 import swiftsolutions.exceptions.InputException;
 import swiftsolutions.input.DOTInputParser;
+import swiftsolutions.interfaces.output.OutputManager;
 import swiftsolutions.interfaces.taskscheduler.Algorithm;
+import swiftsolutions.output.AppOutputManager;
+import swiftsolutions.output.OutputMessage;
+import swiftsolutions.output.OutputType;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
 import swiftsolutions.taskscheduler.branchandboundastarparallel.BBAAlgorithmParallel;
+import swiftsolutions.taskscheduler.branchandbound.BNBAlgorithm;
 import swiftsolutions.taskscheduler.branchandboundastar.BBAAlgorithm;
 import swiftsolutions.util.Pair;
 
@@ -39,12 +40,17 @@ public class BenchmarkAppRunner {
 	private ArrayList<String> _timedOutGraphs;
 	private ArrayList<String> _nonOptimalGraphs;
 	private ArrayList<String> _invalidGraphs;
+	private Map<String, Long> _runTimes;
+	private Class<?> _algorithm;
+	private OutputManager _outputManager;
+	private Map<String, List<Long>> _memoryUsage;
+	private Map<String, List<Double>> _cpuUsage;
 
 	int _timeout;
 	int _numCores;
 
 	public BenchmarkAppRunner(int numCores) {
-
+		_algorithm = BBAAlgorithm.class;
 		_nonOptimalGraphs = new ArrayList<String>();
 		_invalidGraphs = new ArrayList<String>();
 		_outputs = new HashMap<String, Pair<Schedule,Long>>();
@@ -53,7 +59,10 @@ public class BenchmarkAppRunner {
 		_inputParser = new DOTInputParser();
 		_numCores = numCores;
 		_graphs = new ArrayList<File>();
-
+		_runTimes = new HashMap<>();
+		_outputManager = new AppOutputManager();
+		_memoryUsage = new HashMap<>();
+		_cpuUsage = new HashMap<>();
 	}
 
 	//adds a single graph to queue
@@ -70,6 +79,15 @@ public class BenchmarkAppRunner {
 
 	}
 
+	// clears the list of files to run
+	public void clearList() {
+		_graphs.clear();
+	}
+
+	public void setVerbose(boolean verbose) {
+		this._outputManager.setConsoleLog(verbose);
+	}
+
 	//method to run all graph files in queue
 	public void runAll() {
 
@@ -82,9 +100,12 @@ public class BenchmarkAppRunner {
 
 		//for all graphs in the queue _graphs
 		for(File runnable : _graphs) {
-
-
-			System.out.println("\nAttempting to run graph: " + runnable.getName());
+			// set up timers for load statistics
+			Timer loadTimer = new Timer();
+			OperatingSystemMXBean bean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+			List<Long> freeMemory = new ArrayList<>();
+			List<Double> cpuLoad = new ArrayList<>();
+			_outputManager.send(new OutputMessage(OutputType.STATUS, "\nAttempting to run graph: " + runnable.getName()));
 
 			try {
 
@@ -100,12 +121,35 @@ public class BenchmarkAppRunner {
 				//create a new single thread executor
 				executor = Executors.newSingleThreadExecutor();
 
+
+
+				Runner runner = new Runner(runnable, tasks, getProcs(runnable));
+				Algorithm algorithm = (Algorithm)_algorithm.newInstance();
+				algorithm.setProcessors(getProcs(runnable));
+				runner.setAlgorithm(algorithm);
+
+				TimerTask timerTask = new TimerTask() {
+					@Override
+					public void run() {
+						freeMemory.add(bean.getFreePhysicalMemorySize());
+						cpuLoad.add(bean.getProcessCpuLoad());
+					}
+				};
+
+				loadTimer.scheduleAtFixedRate(timerTask, 0 , 50);
+
 				//note start time, then run, then record stop time
 				long start = System.currentTimeMillis();
-				future = executor.invokeAll(Arrays.asList(new Runner(runnable, tasks, getProcs(runnable))), _timeout, TimeUnit.SECONDS);
+				future = executor.invokeAll(Arrays.asList(runner), _timeout, TimeUnit.SECONDS);
 				long end = System.currentTimeMillis();
 
-				
+				// calculate memory usage
+				long maxMemoryUsage = freeMemory.stream().mapToLong(val -> val).max().getAsLong();
+				List<Long> memoryUsage = (freeMemory.stream().map(val -> maxMemoryUsage - val).collect(Collectors.toList()));
+				_memoryUsage.put(runnable.getName(), memoryUsage);
+				_cpuUsage.put(runnable.getName(), cpuLoad);
+
+				loadTimer.cancel();
 				//try record execution logistics in fields, if execution was succesful
 				//all logistic analysis after algorithm execution goes in here
 				try {
@@ -125,13 +169,13 @@ public class BenchmarkAppRunner {
 					}
 
 					//print run time
-					System.out.println("graph:" + runnable.getName() + " ran in: " + (end - start) + "ms"  );
+					_outputManager.send(new OutputMessage(OutputType.STATUS, "graph:" + runnable.getName() + " ran in: " + (end - start) + "ms"  ));
 
 					//Remap tasks with correct ids
 					schedule.convertTaskID(tasks);
 
 					//print schedule 
-					System.out.println(schedule.getOutputString());
+					_outputManager.send(new OutputMessage(OutputType.STATUS, schedule.getOutputString()));
 
 					//print if schedule is not valid, throw exception, add graph to arraylist
 					if(!scheduleValid) {
@@ -141,7 +185,7 @@ public class BenchmarkAppRunner {
 
 					}else {
 
-						System.out.println("schedule is Valid");
+						_outputManager.send(new OutputMessage(OutputType.STATUS, "schedule is Valid"));
 
 					}
 
@@ -187,11 +231,13 @@ public class BenchmarkAppRunner {
 
 							}else {
 
-								System.out.println("schedule was Optimal");
+								_outputManager.send(new OutputMessage(OutputType.STATUS, "schedule was Optimal"));
 
 							}
 						}
 					}
+
+					_runTimes.put(runnable.getName(), (end - start));
 
 					//save schedule + run time
 					_outputs.put(runnable.getName(), new Pair<Schedule,Long>(future.get(0).get() , (end - start)));
@@ -206,9 +252,7 @@ public class BenchmarkAppRunner {
 
 				}
 				catch(Exception e) {
-
-					e.printStackTrace();
-					System.out.println("no solution");
+					_outputManager.send(new OutputMessage(OutputType.STATUS, "no solution"));
 				}
 
 				//shut down executor between loops
@@ -217,18 +261,18 @@ public class BenchmarkAppRunner {
 				//if task was cancelled, print timeout
 				if(future.get(0).isCancelled()) {
 					_timedOutGraphs.add(runnable.getName());
-					System.out.println(runnable.getName() + " took more than " + _timeout + " seconds to run ");
+					_outputManager.send(new OutputMessage(OutputType.STATUS, runnable.getName() + " took more than " + _timeout + " seconds to run "));
 				}
 
 			}catch(Exception e) {
-				System.out.println("Graph run failed");
+				_outputManager.send(new OutputMessage(OutputType.STATUS, "Graph run failed"));
 
 			}
 
-			System.out.println("-------------------------------------------------------------------------------------------------");
+			_outputManager.send(new OutputMessage(OutputType.STATUS, "-------------------------------------------------------------------------------------------------"));
 		}
 
-		System.out.println("\n!!done!!");
+		_outputManager.send(new OutputMessage(OutputType.STATUS, "\n!!done!!"));
 	}
 
 	private boolean checkScheduleValidity(Schedule schedule, Map<Integer, Task> tasks) {
@@ -302,8 +346,31 @@ public class BenchmarkAppRunner {
 		return _invalidGraphs;
 
 	}
-	
-	
+
+	// sets the algorithm used
+	public void setAlgorithm(Class<?> _algorithm) {
+		this._algorithm = _algorithm;
+	}
+
+	// gets the output run-times of the algorithms
+	public Map<String, Long> getRunTimes() {
+		return _runTimes;
+	}
+
+	// gets the output manager
+	public OutputManager getOutputManager() {
+		return _outputManager;
+	}
+
+	// gets the memory usage
+	public Map<String, List<Long>> getMemoryUsage() {
+		return _memoryUsage;
+	}
+
+	// get cpu usage
+	public Map<String, List<Double>> getCpuUsage() {
+		return _cpuUsage;
+	}
 
 	//used by executor class, checks graph file string to get appropriate number of processors, otherwise set to 4
 	private int getProcs(File graph) {
@@ -327,26 +394,23 @@ public class BenchmarkAppRunner {
 		Map<Integer, Task> _tasks;
 		int _processors;
 		File _runnable;
+		Algorithm _algorithm;
 
 		public Runner(File runnable, Map<Integer, Task> tasks, int processors) {
 
+			_algorithm = new BBAAlgorithm();
 			_runnable = runnable;
 			_processors = processors;
 			_tasks = tasks;
 		}
 
+		public void setAlgorithm(Algorithm _algorithm) {
+			this._algorithm = _algorithm;
+		}
+
 		public Schedule call() {
-
-/*
-			BBAAlgorithm bbaAlgorithm = new BBAAlgorithm();
-			bbaAlgorithm.setProcessors(_processors);
-			Schedule outputSchedule = bbaAlgorithm.execute(_tasks);*/
-
-
-			BBAAlgorithmParallel algorithm = new BBAAlgorithmParallel();
-			algorithm.setCores(2); // 2
-			algorithm.setProcessors(_processors);
-			Schedule outputSchedule = algorithm.execute(_tasks);
+			_algorithm.setProcessors(_processors);
+			Schedule outputSchedule = _algorithm.execute(_tasks);
 
 			return outputSchedule;
 		}
