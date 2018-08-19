@@ -114,7 +114,7 @@ public class Scheduler {
         Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR, numProcessors, numCores);
         _start = System.currentTimeMillis();
        _algorithm = _argumentParser.getVisualizeOption().getArgs() ?
-                _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_VISUAL, numProcessors, numCores) :
+                _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR_VISUAL, numProcessors, numCores) :
                 _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR, numProcessors, numCores);
 
         if (_argumentParser.getVisualizeOption().getArgs()) {
