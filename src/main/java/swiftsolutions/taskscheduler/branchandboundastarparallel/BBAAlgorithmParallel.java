@@ -1,6 +1,5 @@
 package swiftsolutions.taskscheduler.branchandboundastarparallel;
 
-import swiftsolutions.interfaces.taskscheduler.Algorithm;
 import swiftsolutions.interfaces.taskscheduler.ParallelAlgorithm;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
@@ -135,7 +134,8 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
         }
 
         // Finding a suitable starting bound for the algorithm.
-        _fSInit = Math.max(_B.get() / _numProcessors, maxBotLevel);
+        _fSInit = _B.get() / _numProcessors > maxBotLevel ? _B.get() / _numProcessors : maxBotLevel;
+        _B.set(Integer.MAX_VALUE);
 
         // Copy to primitive array for FTO.
         int[] orderedTasks = new int[tasks.size()];
@@ -185,7 +185,7 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
 
 
         private RecursiveBBA(int previousTask, int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s,
-                                 int idleTime) {
+                             int idleTime) {
 
             _previousTask = previousTask;
             _previousProcessor = previousProcessor;
@@ -313,17 +313,16 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
                         _depth++;
 
                         // if cost is lower than B(est) and depth is max, set current best, go back up tree
-                        if (cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime) <= _B.get() && (_depth == _tasks.length)) {
-                            _bestFState = clonedS; // clonedS
-                            _B.set(cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime));
-                        }
-
-                        // if cost is lower than B(est) and depth is max, recursive call
-                        if (cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime) <= _B.get() && _depth < _tasks.length) {
-                            // add this to the list of tasks to execute
-                            RecursiveBBA recursiveBBA = new RecursiveBBA(taskID, j, _numFreeTasks, _depth, clonedProcEndTimes, clonedTasks, clonedS, _idleTime);
-                            freeTaskAllProc.add(recursiveBBA);
-
+                        int cost = cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime);
+                        if (cost < _B.get()) {
+                            if (_depth == _tasks.length) {
+                                _bestFState = clonedS; // clonedS
+                                _B.set(cost);
+                            } else {
+                                // add this to list of tasks to execute
+                                RecursiveBBA recursiveBBA = new RecursiveBBA(taskID, j, _numFreeTasks, _depth, clonedProcEndTimes, clonedTasks, clonedS, _idleTime);
+                                freeTaskAllProc.add(recursiveBBA);
+                            }
                         }
 
                         // Reset the offseted values.
@@ -333,21 +332,12 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
                             _idleTime -= offset - _procEndTimes[j];
                         }
                     }
-
                     // core and thread allocation handled automatically by the framework ('work stealing algorithm')
                     ForkJoinTask.invokeAll(freeTaskAllProc);
-
                 }
-
             }
-
         }
     }
-
-
-
-
-
 
     /**
      * This is the main method that creates the schedules implemented using the pseudo code of BBA*.
@@ -431,17 +421,15 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
                 }
             }
 
-            // Check if all the tasks has been ordered, FTO guarantees optimality.
-            if (index == (orderedTasks.length - 1)) {
-                // Update the current bound.
-                int bound = cost(clonedS, clonedProcEndTimes, task, offset, idleTime);
-                if (bound <= _B.get()) {
+            int bound = cost(clonedS, clonedProcEndTimes, task, offset, idleTime);
+            if (bound < _B.get()) {
+                if (index == (orderedTasks.length - 1)) {
+                    // Update the current bound.
                     _bestFState = clonedS; // clonedS
                     _B.set(bound);
+                } else {
+                    FTO(orderedTasks, index + 1, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
                 }
-            } else {
-                // Recursive call to schedule next task
-                FTO(orderedTasks, index + 1, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
             }
 
             // Reset the offseted values.

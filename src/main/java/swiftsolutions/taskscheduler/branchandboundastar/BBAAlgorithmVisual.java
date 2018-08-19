@@ -134,7 +134,7 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
         }
 
         // Finding a suitable starting bound for the algorithm.
-        _fSInit = Math.max(_B / _numProcessors, maxBotLevel);
+        _fSInit = _B / _numProcessors > maxBotLevel ? _B / _numProcessors : maxBotLevel;
         _B = Integer.MAX_VALUE;
 
         // Copy to primitive array for FTO.
