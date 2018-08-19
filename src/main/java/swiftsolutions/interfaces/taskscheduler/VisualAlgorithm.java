@@ -8,50 +8,42 @@ import swiftsolutions.taskscheduler.Schedule;
 public abstract class VisualAlgorithm extends Thread implements Algorithm {
 
     /**
-     * Gets the amount of branches visited
-     * @return
+     * @return  the amount of branches visited
      */
     public abstract int getBranches();
 
     /**
-     * Gets the current bound (best schedule time)
-     * @return
+     * @return the current bound (best schedule time)
      */
     public abstract int getUpperbound();
 
     /**
-     * Gets the current 'valid schedules' found (better than previous bound)
-     * @return
+     * @return the current amount 'valid schedules' found (schedule that was better than previous best schedule)
      */
     public abstract int getValidSchedules();
 
     /**
-     * Gets the amount of times algorithm has not run due to pruning
-     * @return
+     * @return  the amount of times code block was been skipped due to pruning
      */
     public abstract int getPruned();
 
     /**
-     * Gets the current best schedule
-     * @return
+     * @return the current best schedule
      */
     public abstract int[][] getSchedule();
 
     /**
-     * Gets the amount of processors
-     * @return
+     * @return the amount of processors
      */
     public abstract int getProcessors();
 
     /**
-     * Returns whether the algorithm is done.
-     * @return
+     * @return whether the algorithm is done.
      */
     public abstract boolean isDone();
 
     /**
-     * Gets the final schedule output
-     * @return
+     * @return the final schedule output
      */
     public abstract Schedule getFinishedSchedule();
 }

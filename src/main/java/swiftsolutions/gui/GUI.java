@@ -24,29 +24,28 @@ public class GUI extends Application {
 
     /**
      * Sets the algorithm that the GUI will run.
-     * @param thread Algorithm
+     * @param thread is the algorithm that will be run.
      */
     public void setAlgorithmThread(VisualAlgorithm thread) {
         _guiController.setAlgorithmThread(thread);
     }
 
     /**
-     * Sets the scheduler for writing purposes.
-     * @param scheduler
+     * @param scheduler is the scheduler object that has all the information from the CLI arguments.
      */
     public void setScheduler(Scheduler scheduler) {
         _guiController.setScheduler(scheduler);
     }
 
     /**
-     * Sets task map so GUI can obtain information about the tasks
-     * @param taskMap
+     * @param taskMap is the task map so GUI can obtain information about the tasks
      */
     public void setTaskMap(Map<Integer, Task> taskMap) { _guiController.setTaskMap(taskMap); }
 
     /**
      * Loads the GUI
-     * @param primaryStage unused
+     * @param primaryStage unused, however is needed to override the Application#start method which is used
+     *                  by the JavaFX framework.
      */
     @Override
     public void start(Stage primaryStage) {

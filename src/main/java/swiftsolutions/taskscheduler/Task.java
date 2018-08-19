@@ -26,13 +26,6 @@ public class Task implements Serializable{
         _childTasks = new HashSet<>();
     }
 
-    public Task createCopy() {
-        Task task = new Task(_taskID, _processTime);
-        _communicationCosts = task._communicationCosts;
-        _parentTasks = task._parentTasks;
-        return task;
-    }
-
     /**
      * Method to add a child task to the task
      * @param task The child task to be added
@@ -62,47 +55,56 @@ public class Task implements Serializable{
     }
 
     /**
-     * Getter for the process time
-     * @return
+     * @return the time that it takes to process task.
      */
     public int getProcessTime(){
         return this._processTime;
     }
 
     /**
-     * Getter for getting the unique task ID.
-     * @return
+     * @return the unique task ID.
      */
     public int getTaskID() {
         return this._taskID;
     }
 
     /**
-     * Getter for getting the number of dependencies.
-     * @return
+     * @return the number of dependencies.
      */
     public int getNumDependency(){
         return _parentTasks.size();
     }
 
+    /**
+     * @return the set of parent tasks ids.
+     */
     public Set<Integer> getParentTasks() {
         return _parentTasks;
     }
 
+    /**
+     * @return the set of child tasks ids.
+     */
     public Set<Integer> getChildTasks() { return _childTasks; }
 
+    /**
+     * @return the set of communication tasks keys by "child task id" and value is corresponding to the communication
+     * cost to that child.
+     */
     public Map<Integer, Integer> getCommunicationCosts() { return _communicationCosts; }
 
-    public void offsetId(int offset) {
-        _taskID -= offset;
-    }
-
+    /**
+     * @param bottomLevel the bottom level of said node.
+     */
     public void updateBottomLevel(int bottomLevel) {
         if (bottomLevel > _bottomLevel) {
             _bottomLevel = bottomLevel;
         }
     }
 
+    /**
+     * @return the bottom level of node
+     */
     public int getBottomLevel() {
         return _bottomLevel;
     }

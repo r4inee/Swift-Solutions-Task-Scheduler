@@ -13,6 +13,9 @@ import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+/**
+ * Algorithm that will run BBA* in parallel. See ParallelAlgorithm.
+ */
 public class BBAAlgorithmParallel implements ParallelAlgorithm {
     private int _numProcessors;
 

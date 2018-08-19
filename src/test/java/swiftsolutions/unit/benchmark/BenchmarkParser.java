@@ -6,18 +6,18 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-/*
+/**
  * Used to return a list of all files in folder
- * catagorises files based on attributes
+ * catagorizes files based on attributes
  * file objects may be used to pass into benchmark runner
  */
 public class BenchmarkParser {
 
 	private String _folder;
 	private File[] _graphs;
-	private Map<String, ArrayList<File>> _processorCatagory = new HashMap<String, ArrayList<File>>();
-	private Map<String, ArrayList<File>> _typeCatagory = new HashMap<String,  ArrayList<File>>();
-	private Map<String, ArrayList<File>> _nodesCatagory = new HashMap<String,  ArrayList<File>>();
+	private Map<String, ArrayList<File>> _processorCatagory = new HashMap<>();
+	private Map<String, ArrayList<File>> _typeCatagory = new HashMap<>();
+	private Map<String, ArrayList<File>> _nodesCatagory = new HashMap<>();
 
 
 	public BenchmarkParser(String folder) {
@@ -27,6 +27,9 @@ public class BenchmarkParser {
 
 	}
 
+	/**
+	 * Catagorize the files in the input directory.
+	 */
 	public void catagoriseFiles() {
 
 		for(File file : _graphs) {
@@ -39,7 +42,7 @@ public class BenchmarkParser {
 				
 				if(name[3].equals("Nodes")) {name[3] = name [4];}
 				
-				//checks processors for graph file, puts into appropriate category
+				// Checks processors for graph file, puts into appropriate category
 				if(!_processorCatagory.containsKey(name[0])) {
 
 					ArrayList<File> newCat = new ArrayList<File>();
@@ -52,7 +55,7 @@ public class BenchmarkParser {
 
 				}
 
-				//checks type for graph file, puts into appropriate category
+				// Checks type for graph file, puts into appropriate category
 				if(!_typeCatagory.containsKey(name[1])) {
 
 					ArrayList<File> newCat = new ArrayList<File>();
@@ -65,7 +68,7 @@ public class BenchmarkParser {
 
 				}
 
-				//checks number of nodes for graph file, puts into appropriate category
+				// Checks number of nodes for graph file, puts into appropriate category
 				if(!_nodesCatagory.containsKey(name[3])) {
 
 					ArrayList<File> newCat = new ArrayList<File>();
@@ -83,30 +86,38 @@ public class BenchmarkParser {
 
 	}
 
-	//get all files belonging to each category
-	public Map<String, ArrayList<File>> getProcessorCatagory(){
+	/**
+	 * @return all files belonging to each category
+	 */
+	public Map<String, ArrayList<File>> getProcessorCategory(){
 
 		return _processorCatagory;
 
 	}
 
-	public Map<String, ArrayList<File>> getTypeCatagory(){
+	/**
+	 * @return all files belonging to each category
+	 */
+	public Map<String, ArrayList<File>> getTypeCategory(){
 
 		return _typeCatagory;
 
 	}
 
-	public Map<String, ArrayList<File>> getNodesCatagory(){
+	/**
+	 * @return all files belonging to each category
+	 */
+	public Map<String, ArrayList<File>> getNodesCategory(){
 
 		return _nodesCatagory;
 
 	}
 
-	//get all files in the entire folder
+	/**
+	 * @return all files
+	 */
 	public ArrayList<File> getAllGraphs(){
-
-		return new ArrayList<File>(Arrays.asList(_graphs));
-
+		return new ArrayList<>(Arrays.asList(_graphs));
 	}
 
 

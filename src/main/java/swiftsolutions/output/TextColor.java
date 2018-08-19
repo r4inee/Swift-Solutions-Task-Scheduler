@@ -1,7 +1,7 @@
 package swiftsolutions.output;
 
 /**
- * Created by Winston on 7/31/2018.
+ * An enumeration of the colors of texts that be displayed to the commmand line.
  */
 public enum TextColor {
     GREEN("\u001B[32m"),
@@ -20,6 +20,9 @@ public enum TextColor {
         this._prefix = prefix;
     }
 
+    /**
+     * @return the prefix that is prepended to a string to make it colorful in the CLI.
+     */
     public String getPrefix() {
         return this._prefix;
     }

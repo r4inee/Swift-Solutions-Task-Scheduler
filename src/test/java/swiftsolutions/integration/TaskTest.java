@@ -1,4 +1,4 @@
-package swiftsolutions.unit;
+package swiftsolutions.integration;
 
 import org.junit.Test;
 import swiftsolutions.exceptions.InputException;
@@ -11,6 +11,9 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.fail;
 
+/**
+ * Tests the task class.
+ */
 public class TaskTest {
 
     @Test

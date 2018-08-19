@@ -24,6 +24,11 @@ public class Schedule {
 		_numProc = numProc;
 	}
 
+	/**
+	 * Normalizes the taskIDS.
+	 * @param taskMap the map of tasks, keyed by the task id and has a corresponding value of the information of that
+	 *                task.
+	 */
 	public void convertTaskID(Map<Integer, Task> taskMap) {
 		Map<Integer, Pair<Integer, Integer>> map = new HashMap<>();
 		for (Integer offsetID : _taskToProcessorMap.keySet()) {
@@ -33,6 +38,10 @@ public class Schedule {
 		_taskToProcessorMap = map;
 	}
 
+	/**
+	 * Splits the tasks by processors
+	 * @return a map of processor id, to list of tasks that have been scheduled on that processor.
+	 */
 	private Map<Integer, ArrayList<Integer>> splitByProcessor() {
 		Map<Integer, ArrayList<Integer>> procMap = new HashMap<>();
 		for (Integer taskID : _taskToProcessorMap.keySet()) {
@@ -46,6 +55,9 @@ public class Schedule {
 
 	}
 
+	/**
+	 * @return the Schedule as a string to be displayed on the command line.
+	 */
 	public String getOutputString() {
 		String output = "";
 		Map<Integer, ArrayList<Integer>> procMap = splitByProcessor();
@@ -68,15 +80,25 @@ public class Schedule {
 		return output;
 	}
 
-	
-
-
+	/**
+	 * Returns the processor that the input task as been scheduled on.
+	 * @param task that we want to get the processor of that it has been scheduled on.
+	 * @return the processor of the task input.
+	 */
 	public Pair<Integer, Integer> getProcessor(Integer task) {
 		return _taskToProcessorMap.get(task);
 	}
+
+	/**
+	 * @return the total number of processors that we have been scheduling tasks on.
+	 */
 	public int getNumProc() {
 		return _numProc;
 	}
+
+	/**
+	 * @return a map of processor id, to list of tasks that have been scheduled on that processor.
+	 */
 	public Map<Integer, Pair<Integer, Integer>> getTaskToProcessorMap() {
 		return _taskToProcessorMap;
 	}

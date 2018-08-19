@@ -135,7 +135,7 @@ public class GUIController {
 
     /**
      * Sets the scheduler
-     * @param scheduler
+     * @param scheduler which contains the current state of the application.
      */
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
@@ -143,14 +143,15 @@ public class GUIController {
 
     /**
      * Sets the task information map
-     * @param taskMap
+     * @param taskMap is the taskMap whether maps from taskID to Task, which contains information about each task.
      */
     public void setTaskMap(Map<Integer, Task> taskMap) {
         this.taskMap = taskMap;
     }
 
     /**
-     * Function that runs are view has been initialized see JavaFX documentation
+     * Method that runs when the view has been initialized see JavaFX documentation, this will set up
+     * all of the timers and other variables that are needed to start GUI functionality.
      */
     @FXML
     private void initialize() {
@@ -186,7 +187,8 @@ public class GUIController {
     }
 
     /**
-     * Function that runs when the algorithm starts
+     * Method that will update the view by polling the algorithm, it will also update the view to disable buttons
+     * and such thus that the current state of the scheduler is reflected in the view.
      */
     private void start() {
         // Start the timerTimer
@@ -245,7 +247,8 @@ public class GUIController {
     }
 
     /**
-     * Function that runs when the algorithm has been prematurely terminated
+     * Method that runs when the algorithm has been prematurely terminated, this method will stop all the timers
+     * such that the view reflects the current state of the scheduler.
      */
     private void stop() {
         // Stop the algorithm
@@ -269,6 +272,12 @@ public class GUIController {
         showAlert(WRITE_SUCCESS_ICON, WRITE_SUCCESS_DIALOG_TITLE, WRITE_SUCCESS_DIALOG_BODY);
     }
 
+    /**
+     * Method that is used to show an alert to the user.
+     * @param image The image in the body of the alert
+     * @param title The title of the alert.
+     * @param body The text is the body of the alert.
+     */
     private void showAlert(String image, String title, String body) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
@@ -285,7 +294,8 @@ public class GUIController {
     }
 
     /**
-     * Function that runs when the algorithm has successfully completed
+     * Method that runs when the algorithm has successfully completed, will stop the timers such that the view
+     * reflects the current state of the scheduler.
      */
     private void finish() {
         // Make sure this method will only run once
@@ -310,7 +320,7 @@ public class GUIController {
     }
 
     /**
-     * Function that starts the timer on the GUI
+     * Method that starts the timer on the GUI
      */
     private void startTimer() {
         // Get startTime
@@ -334,13 +344,13 @@ public class GUIController {
     }
 
     /**
-     * Function that will initialize a time ticking chart with a value to be with the system
-     * @param x xAxis
-     * @param y yAxis
-     * @param chart
+     * Method that will initialize a time ticking chart with a value to be with the system
+     * @param x xAxis of Chart
+     * @param y yAxis of Chart
+     * @param chart the chart to initialize
      * @param bean System Bean
      * @param start Start time
-     * @param valueFunction Function that returns the value
+     * @param valueFunction method that returns the value to be used in the load chart on the y axis.
      */
     private void initChart(
             NumberAxis x,
@@ -362,7 +372,7 @@ public class GUIController {
         x.setAutoRanging(false);
         y.setAutoRanging(false);
         y.setLowerBound(0);
-        y.setUpperBound(100);
+        y.setUpperBound(101);
         x.setOpacity(0);
         chart.setData(data);
         y.setTickUnit(10);
@@ -408,8 +418,8 @@ public class GUIController {
 
     /**
      * Returns current system CPU usage
-     * @param bean
-     * @return
+     * @param bean the OS bean that is used to obtain the CPU usage values.
+     * @return the CPU usage as a percentage
      */
     private double getCpuUsage(OperatingSystemMXBean bean) {
         return bean.getSystemCpuLoad() * 100;
@@ -417,8 +427,8 @@ public class GUIController {
 
     /**
      * Returns current system memory usage by this application
-     * @param bean
-     * @return
+     * @param bean the OS bean that is used to obtain the memory usage values.
+     * @return the Memory usage as a percentage
      */
     private double getMemoryUsage(OperatingSystemMXBean bean) {
         return (double)bean.getCommittedVirtualMemorySize() * 100 / (double)bean.getTotalPhysicalMemorySize();
@@ -443,7 +453,7 @@ public class GUIController {
     }
 
     /**
-     * Updates the bar chart
+     * Updates the bar chart based off the current most optimal schedule
      * @param schedule schedule for bar chart for which bar chart is to be modelled
      */
     private void updateBarChart(int[][] schedule) {
