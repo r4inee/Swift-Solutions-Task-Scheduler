@@ -1,26 +1,31 @@
-package swiftsolutions.taskscheduler.branchandboundastar;
+package swiftsolutions.taskscheduler.branchandboundastarparallel;
 
+import swiftsolutions.interfaces.taskscheduler.ParallelAlgorithm;
 import swiftsolutions.interfaces.taskscheduler.VisualAlgorithm;
 import swiftsolutions.taskscheduler.Schedule;
 import swiftsolutions.taskscheduler.Task;
+import swiftsolutions.taskscheduler.branchandboundastar.Cache;
 import swiftsolutions.util.Pair;
 
 import java.util.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-/**
- * A class containing the BBA* algorithm, blacked boxed in primitive types.
- */
-public class BBAAlgorithmVisual extends VisualAlgorithm {
+public class BBAAlgorithmParallelVisual extends VisualAlgorithm implements ParallelAlgorithm {
+    private int _numProcessors;
+
     private int[][] _tasks; // row represents the task, cols represent { proc time, number of dependencies, bottom level}
     private int[][] _dependencies; // row represents child, col represents parent, value 1 represents is parent 0 if not
     private int[][] _bestFState; // output schedule
     private int[][] _communicationCosts; // row represents the parent, col represents the child, value is the cost
-    private int[][] _nodeEquivalence; // map for detecting node equivalence
+    private int[][] _nodeEquivalence;
     private Map<Integer, Task> _taskMap;
-    private Set<Cache> _seenSchedules; // set of cached schedules
-    private int _B; // current best bound
-    private int _fSInit; // initial f bound.
+    private Set<Cache> _seenSchedules;
+    private AtomicInteger _B;
+    private int _fSInit;
 
     // Used for visualisation
     private volatile int _branches;
@@ -29,7 +34,6 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
     private volatile boolean _done;
     private volatile Schedule _optimalSchedule;
 
-    // Macros for the constants used in mapping.
     public static final int EMPTY = -1;
     public static final int SCHEDULE_COL_SIZE = 3;
     // used for schedules in general (including _bestFState)
@@ -40,14 +44,24 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
     public static final int PROC_TIME = 0;
     public static final int NUM_DEP = 1;
     public static final int BOTTOM_LVL = 2;
-    private int _numProcessors;
 
-    /**
-     * Constructor for the BBAAlgorithm.
-     */
-    public BBAAlgorithmVisual() {
+
+    // parallelization
+    private int _numCores;
+    ForkJoinPool _customPool; // we can specify the number of cores with a custom ForkJoinPool
+
+
+    public BBAAlgorithmParallelVisual() {
         _seenSchedules = new HashSet<>();
     }
+
+    @Override
+    public Schedule execute(Map<Integer, Task> tasks) {
+        _taskMap = tasks;
+
+        return null;
+    }
+
 
     /**
      * Overrides Algorithm setProcessors
@@ -62,32 +76,31 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
 
 
     /**
-     * Starts the algorithm
      *
-     * @param tasks tasks that will be scheduled
-     *              See Algorithm#execute()
-     */
+     * Overrides ParallelAlgorithm's setCores
+     * See ParallelAlgorithm#setCores()
+     *
+     * @param cores
+     * */
     @Override
-    public Schedule execute(Map<Integer, Task> tasks) {
-        _taskMap = tasks;
-
-        return null;
+    public void setCores(int cores) {
+        _numCores = cores;
     }
 
+
     /**
-     * Overrides Algorithm execute, contains pre-processing for the algorithm.
+     * Overrides Algorithm execute
      * See Algorithm#execute()
      *
-     * @return A schedule object for the output parser
+     * @return
      */
     @Override
     public void run() {
         super.run();
-        // Initialising variables
-        _B = 0; // Max int
+        _customPool = new ForkJoinPool(_numCores);
+        _B = new AtomicInteger(0); // Max int
         int maxBotLevel = 0;
         int idleTime = 0;
-        _done = false;
 
         // Calculates the Bottom Level for each task.
         Set<Task> leafs = _taskMap.values() //find all the leaf nodes
@@ -118,7 +131,7 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
 
         // Finding the maximum bottle level for cost calculation
         for (int task : _taskMap.keySet()) {
-            _B += _taskMap.get(task).getProcessTime();
+            _B.set(_B.get() + _taskMap.get(task).getProcessTime());
             if (_taskMap.get(task).getBottomLevel() > maxBotLevel) {
                 maxBotLevel = _taskMap.get(task).getBottomLevel();
             }
@@ -134,8 +147,8 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
         }
 
         // Finding a suitable starting bound for the algorithm.
-        _fSInit = _B / _numProcessors > maxBotLevel ? _B / _numProcessors : maxBotLevel;
-        _B = Integer.MAX_VALUE;
+        _fSInit = _B.get() / _numProcessors > maxBotLevel ? _B.get() / _numProcessors : maxBotLevel;
+        _B.set(Integer.MAX_VALUE);
 
         // Copy to primitive array for FTO.
         int[] orderedTasks = new int[_taskMap.size()];
@@ -164,147 +177,203 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
     }
 
     /**
-     * This is the main method that creates the schedules implemented using the pseudo code of BBA*.
+     * This inner class encapsulates all of the core logic of the BBA* algorithm, including pruning such as FTO pruning.
+     * It executes the recursive nature of the algorithm in parallel, by delegating each recursive call (which stores
+     * state for a given free task/processor combination) to worker threads (running across multiple cores) as
+     * typical of a 'work stealing' algorithm.
      *
-     * @param previousTask      The previous task which was scheduled
-     * @param previousProcessor The previous processor which task was scheduled
-     * @param numFreeTasks      The previous number of available tasks
-     * @param depth             The current recursive depth
-     */
-    private void BBA(int previousTask, int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s,
-                     int idleTime) {
-        // The current list of available tasks.
-        int[] freeTasks = free(s, tasks);
-        if (freeTasks.length != 0) {
-            int[] independent = isAllIndependent(freeTasks);
-            // Check if all the left over tasks are independent.
-            if (independent != null) {
-                FTO(independent, 0, procEndTimes, tasks, s, idleTime);
-                return;
-            }
+     * All thread management is done automatically.
+     * */
+    private class RecursiveBBA extends RecursiveAction {
 
-            // Check if all the left over tasks can be put in FTO
-            Set<Integer> leftOver = new HashSet<>();
-            for (int i = 0; i < s.length; i++) {
-                if (s[i][PROCESSOR_INDEX] == EMPTY) {
-                    leftOver.add(i);
+        private int _previousTask;
+        private int _previousProcessor;
+        private int _numFreeTasks;
+        private int _depth;
+        private int[] _procEndTimes;
+        private int[][] _tasks;
+        private int[][] _s;
+        private int _idleTime;
+
+
+        private RecursiveBBA(int previousTask, int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s,
+                             int idleTime) {
+
+            _previousTask = previousTask;
+            _previousProcessor = previousProcessor;
+            _numFreeTasks = numFreeTasks;
+            _depth = depth;
+            _procEndTimes = procEndTimes;
+            _tasks = tasks;
+            _s = s;
+            _idleTime = idleTime;
+        }
+
+
+        @Override
+        protected void compute() {
+
+            // The current list of available tasks.
+            int[] freeTasks = free(_s, _tasks);
+            if (freeTasks.length != 0) {
+                int[] independent = isAllIndependent(freeTasks);
+                // Check if all the left over tasks are independent.
+                if (independent != null) {
+                    FTO(independent, 0, _procEndTimes, _tasks, _s, _idleTime);
+                    return;
                 }
-            }
-            int[] unscheduled = leftOver.stream().mapToInt(Number::intValue).toArray();
-            int[] fto = isFTO(unscheduled, s, freeTasks.length);
-            if (fto != null) {
-                FTO(fto, 0, procEndTimes, tasks, s, idleTime);
-                return;
-            }
 
-            _branches++;
-            // Cache Pruning which stores recently seen schedules
-            Cache cache = new Cache(_numProcessors, s);
-            if (_seenSchedules.contains(cache)) {
-                _pruned++;
-                return;
-            } else {
-                _seenSchedules.add(cache);
-            }
-
-            // Looping through all permutations of tasks and processors.
-            for (int i = 0; i < freeTasks.length; i++) {
-                for (int j = 0; j < _numProcessors; j++) {
-
-                    // Processor Normalisation
-                    if (j > getFirstEmptyProc(procEndTimes)) {
-                        break;
+                // Check if all the left over tasks can be put in FTO
+                Set<Integer> leftOver = new HashSet<>();
+                for (int i = 0; i < _s.length; i++) {
+                    if (_s[i][PROCESSOR_INDEX] != EMPTY) {
+                        leftOver.add(i);
                     }
+                }
+                int[] unscheduled = leftOver.stream().mapToInt(Number::intValue).toArray();
+                int[] fto = isFTO(unscheduled, _s, _numFreeTasks);
+                if ((fto != null) && (leftOver.size() == freeTasks.length)) {
+                    FTO(fto, 0, _procEndTimes, _tasks, _s, _idleTime);
+                    return;
+                }
 
-                    // Partial Duplicate Detection
-                    if (freeTasks.length == numFreeTasks) {
-                        if (j < previousProcessor) {
-                            continue;
-                        }
-                    }
-                    // Task to be scheduled next.
-                    int taskID = freeTasks[i];
-                    // Node Equivalence
-                    if (previousTask != EMPTY) {
-                        if (_nodeEquivalence[previousTask][taskID] == 1) {
+                _branches++;
+                // Cache Pruning which stores recently seen schedules
+                Cache cache = new Cache(_numProcessors, _s);
+                if (_seenSchedules.contains(cache)) {
+                    _pruned++;
+                    return;
+                } else {
+                    _seenSchedules.add(cache);
+                }
+
+                // Looping through all permutations of tasks and processors.
+                for (int i = 0; i < freeTasks.length; i++) {
+
+                    // we collect all state required to execute the allocation of the current free task
+                    // on to each processor, in parallel
+                    List<RecursiveBBA> freeTaskAllProc = new ArrayList<>();
+
+
+                    for (int j = 0; j < _numProcessors; j++) {
+
+                        // Processor Normalisation
+                        if (j > getFirstEmptyProc(_procEndTimes)) {
                             break;
                         }
-                    }
 
-                    // Cloning of schedules, processor end times and tasks
-                    int[][] clonedS = copySchedule(s);
-                    int[] clonedProcEndTimes = Arrays.copyOf(procEndTimes, procEndTimes.length); //copy Processor end times
-                    int[][] clonedTasks = copyTasks(tasks);
-
-                    // Calculate parent offset
-                    int offset = 0;
-                    for (int di = 0; di < _dependencies[taskID].length; di++) {
-                        int tempOffset = clonedS[di][END_TIME];
-                        //look at all parents of current task (parent task id is DJ)
-                        if (_dependencies[taskID][di] == 1) {
-                            //check if that parent is on the same proc
-                            if (clonedS[di][PROCESSOR_INDEX] != j) {
-                                //if the processor is not on the same
-                                tempOffset += _communicationCosts[di][taskID];
-                            }
-                            if (tempOffset > offset) {
-                                offset = tempOffset;
+                        // Partial Duplicate Detection
+                        if (freeTasks.length == _numFreeTasks) {
+                            if (j < _previousProcessor) {
+                                continue;
                             }
                         }
-                    }
-
-                    // Calculate the start time of the task
-                    int taskStart;
-                    if (offset < clonedProcEndTimes[j]) {
-                        taskStart = clonedProcEndTimes[j];
-                    } else if (clonedProcEndTimes[j] == 0) {
-                        taskStart = offset;
-                        idleTime = offset;
-                    } else {
-                        taskStart = offset;
-                        idleTime += offset - clonedProcEndTimes[j];
-                    }
-
-                    // Allocate the task on the cloned schedule and update cloned dependencies and processor end times.
-                    clonedS[taskID][PROCESSOR_INDEX] = j;
-                    clonedS[taskID][START_TIME] = taskStart;
-                    clonedS[taskID][END_TIME] = taskStart + clonedTasks[taskID][PROC_TIME];
-                    clonedProcEndTimes[j] = clonedS[taskID][END_TIME];
-                    for (int dj = 0; dj < _dependencies.length; dj++) {
-                        if (_dependencies[dj][taskID] == 1) {
-                            clonedTasks[dj][NUM_DEP]--;
+                        // Task to be scheduled next.
+                        int taskID = freeTasks[i];
+                        // Node Equivalence
+                        if (_previousTask != EMPTY) {
+                            if (_nodeEquivalence[_previousTask][taskID] == 1) {
+                                break;
+                            }
                         }
-                    }
 
-                    // Calculate the new current number of free tasks and increment depth
-                    numFreeTasks = free(clonedS, clonedTasks).length - 1;
-                    depth++;
+                        // Cloning of schedules, processor end times and tasks
+                        int[][] clonedS = copySchedule(_s);
+                        int[] clonedProcEndTimes = Arrays.copyOf(_procEndTimes, _procEndTimes.length); //copy Processor end times
+                        int[][] clonedTasks = copyTasks(_tasks);
 
-                    // if cost is lower than B(est) and depth is max, set current best, go back up tree
-                    int cost = cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime);
-                    if (cost < _B) {
-                        if (depth == _tasks.length) {
-                            _validSchedules++;
-                            _bestFState = clonedS; // clonedS
-                            _B = cost;
+                        // Calculate parent offset
+                        int offset = 0;
+                        for (int di = 0; di < _dependencies[taskID].length; di++) {
+                            int tempOffset = clonedS[di][END_TIME];
+                            //look at all parents of current task (parent task id is DJ)
+                            if (_dependencies[taskID][di] == 1) {
+                                //check if that parent is on the same proc
+                                if (clonedS[di][PROCESSOR_INDEX] != j) {
+                                    //if the processor is not on the same
+                                    tempOffset += _communicationCosts[di][taskID];
+                                }
+                                if (tempOffset > offset) {
+                                    offset = tempOffset;
+                                }
+                            }
+                        }
+
+                        // Calculate the start time of the task
+                        int taskStart;
+                        if (offset < clonedProcEndTimes[j]) {
+                            taskStart = clonedProcEndTimes[j];
+                        } else if (clonedProcEndTimes[j] == 0) {
+                            taskStart = offset;
+                            _idleTime = offset;
                         } else {
-                            // if cost is lower than B(est) and depth is max, recursive call
-                            BBA(taskID, j, numFreeTasks, depth, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
+                            taskStart = offset;
+                            _idleTime += offset - clonedProcEndTimes[j];
                         }
-                    } else if (depth < _tasks.length) {
-                        _pruned++;
-                    }
 
-                    // Reset the offseted values.
-                    numFreeTasks = freeTasks.length;
-                    depth--;
-                    if (offset > procEndTimes[j]) {
-                        idleTime -= offset - procEndTimes[j];
+                        // Allocate the task on the cloned schedule and update cloned dependencies and processor end times.
+                        clonedS[taskID][PROCESSOR_INDEX] = j;
+                        clonedS[taskID][START_TIME] = taskStart;
+                        clonedS[taskID][END_TIME] = taskStart + clonedTasks[taskID][PROC_TIME];
+                        clonedProcEndTimes[j] = clonedS[taskID][END_TIME];
+                        for (int dj = 0; dj < _dependencies.length; dj++) {
+                            if (_dependencies[dj][taskID] == 1) {
+                                clonedTasks[dj][NUM_DEP]--;
+                            }
+                        }
+
+                        // Calculate the new current number of free tasks and increment depth
+                        _numFreeTasks = free(clonedS, clonedTasks).length - 1;
+                        _depth++;
+
+                        // if cost is lower than B(est) and depth is max, set current best, go back up tree
+                        int cost = cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime);
+                        if (cost < _B.get()) {
+                            if (_depth == _tasks.length) {
+                                _validSchedules++;
+                                _bestFState = clonedS; // clonedS
+                                _B.set(cost);
+                            } else {
+                                // add this to list of tasks to execute
+                                RecursiveBBA recursiveBBA = new RecursiveBBA(taskID, j, _numFreeTasks, _depth, clonedProcEndTimes, clonedTasks, clonedS, _idleTime);
+                                freeTaskAllProc.add(recursiveBBA);
+                            }
+                        } else if (_depth < _tasks.length) {
+                            _pruned++;
+                        }
+
+                        // Reset the offseted values.
+                        _numFreeTasks = freeTasks.length;
+                        _depth--;
+                        if (offset > _procEndTimes[j]) {
+                            _idleTime -= offset - _procEndTimes[j];
+                        }
                     }
+                    // core and thread allocation handled automatically by the framework ('work stealing algorithm')
+                    ForkJoinTask.invokeAll(freeTaskAllProc);
                 }
             }
         }
     }
+
+    /**
+     * This is the main method that creates the schedules implemented using the pseudo code of BBA*.
+     * It uses the Fork/Join framework to parallelize the search through the solution space.
+     *
+     * @param previousTask The previous task which was scheduled
+     * @param previousProcessor The previous processor which task was scheduled
+     * @param numFreeTasks The previous number of available tasks
+     * @param depth The current recursive depth
+     */
+    private void BBA(int previousTask, int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s,
+                     int idleTime) {
+
+        RecursiveBBA recursiveBBA = new RecursiveBBA(previousTask, previousProcessor, numFreeTasks, depth,
+                procEndTimes, tasks, s, idleTime);
+        _customPool.invoke(recursiveBBA);
+
+    }
+
 
     /**
      * Recursive Ordering for FTO, AllIndependence and InitialBound.
@@ -370,13 +439,12 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
                 }
             }
 
-            // Check if all the tasks has been ordered, FTO guarantees optimality.
             int bound = cost(clonedS, clonedProcEndTimes, task, offset, idleTime);
-            if (bound < _B) {
+            if (bound < _B.get()) {
                 if (index == (orderedTasks.length - 1)) {
                     // Update the current bound.
                     _bestFState = clonedS; // clonedS
-                    _B = bound;
+                    _B.set(bound);
                     _validSchedules++;
                 } else {
                     FTO(orderedTasks, index + 1, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
@@ -390,7 +458,6 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
                 idleTime -= offset - procEndTimes[j];
             }
         }
-
     }
 
     /**
@@ -870,7 +937,7 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
 
     @Override
     public int getUpperbound() {
-        return _B;
+        return _B.get();
     }
 
     @Override
@@ -903,3 +970,4 @@ public class BBAAlgorithmVisual extends VisualAlgorithm {
         return convertSchedule(_bestFState);
     }
 }
+
