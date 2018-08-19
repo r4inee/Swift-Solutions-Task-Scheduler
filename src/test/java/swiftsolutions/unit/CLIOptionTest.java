@@ -29,39 +29,6 @@ public class CLIOptionTest {
         }
 
     }
-    /**
-     * Test that a positive integer passed to verify throws
-     * an ArgumentFormatException with the correct message
-     * for CoreOption
-     */
-    @Test
-    public void testCoresNegativeIntegerVerify(){
-        CoresOption coresOption = new CoresOption();
-        ArrayList<String> input = new ArrayList<>();
-        input.add("-1");
-        try {
-            coresOption.verifyArgs(input);
-        } catch (ArgumentFormatException e) {
-            assertEquals("Value after processor flag (-v) must be a positive integer!",e.getMessage());
-        }
-    }
-
-    /**
-     * Test that an invalid integer passed to verify throws
-     * an ArgumentFormatException with the correct message
-     * for CoreOption
-     */
-    @Test
-    public void testCoresNotIntegerVerify(){
-        CoresOption coresOption = new CoresOption();
-        ArrayList<String> input = new ArrayList<>();
-        input.add("a");
-        try {
-            coresOption.verifyArgs(input);
-        } catch (ArgumentFormatException e) {
-            assertEquals("Value after processor flag (-v) must be a valid integer!",e.getMessage());
-        }
-    }
 
     /**
      * Test that a valid argument passed to verify()

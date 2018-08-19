@@ -18,7 +18,7 @@ public enum Algorithms {
     BRANCH_AND_BOUND_A_STAR(new BBAAlgorithm(), "bba-simple", false),
     BRANCH_AND_BOUND_VISUAL(new BNBAlgorithmVisual(), "bnb-visual", false),
     BRANCH_AND_BOUND_A_STAR_VISUAL(new BBAAlgorithmVisual(), "bba-visual", false),
-    BRANCH_AND_BOUND_A_START_PARALLEL(new BBAAlgorithmParallel(), "bba-parallel", true),
+    BRANCH_AND_BOUND_A_STAR_PARALLEL(new BBAAlgorithmParallel(), "bba-parallel", true),
     BRANCH_AND_BOUND_A_PARALLEL_VISUAL(new BBAAlgorithmParallelVisual(), "bba-parallel-visual", true);
 
     private Algorithm _algorithm;

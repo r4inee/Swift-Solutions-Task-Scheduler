@@ -4,10 +4,33 @@ import swiftsolutions.output.OutputMessage;
 import swiftsolutions.util.Observer;
 
 /**
- * Created by Winston on 7/31/2018.
+ * OutputManager for the application will manage messages to the user.
  */
 public interface OutputManager {
-    public void send(OutputMessage message);
-    public void addObserver(Observer<OutputMessage> observer);
-    public void setConsoleLog(boolean status);
+    /**
+     * Send a message to the output
+     * @param message an output message that will be sent
+     */
+     void send(OutputMessage message);
+
+    /**
+     * Add an observer to the output messages.
+     * @param observer
+     */
+    void addObserver(Observer<OutputMessage> observer);
+
+    /**
+     * @param status is the variable that indicates whether we want to console log any output messages.
+     */
+     void setConsoleLog(boolean status);
+
+    /**
+     * @param status is the variable that indicates whether we want to see debug messages.
+     */
+    void setVerbose(boolean status);
+
+    /**
+     * @param status is the variable that indicates whether we want to see colored messages.
+     */
+    void setColor(boolean status);
 }

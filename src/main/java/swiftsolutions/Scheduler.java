@@ -24,13 +24,15 @@ import swiftsolutions.taskscheduler.*;
 import java.util.Map;
 
 /**
- * Created by Winston on 7/31/2018.
+ * Class that will coordinate the various components such that they will work together in a way to produce a valid,
+ * optimal schedule based off the input arguments. Various types of scheduling can be set, this is done in the input
+ * arguments that are parsed into the start() function.
  */
 public class Scheduler {
 
     private static Scheduler _instance;
 
-    public static Scheduler getContext() {
+    public static Scheduler getInstance() {
         if (_instance == null) {
             _instance = new Scheduler();
         }
@@ -49,7 +51,6 @@ public class Scheduler {
     private Map<Integer, Task> _offsetTaskMap;
     private long _start;
 
-
     private Scheduler() {
         _outputManager = new AppOutputManager();
         _argumentParser = new CLIArgumentParser();
@@ -58,12 +59,24 @@ public class Scheduler {
         _outputWriter = new DOTOutputWriter();
     }
 
+    /**
+     * @return the output manager used by the scheduler.
+     */
     public OutputManager getOutputManager() {
         return this._outputManager;
     }
 
+    /**
+     * Starts the scheduling
+     * @param args the input arguments parsed by the user.
+     */
     public void start(String args[]) {
 
+        // Get the current system time to calculate performance.
+        _start = System.currentTimeMillis();
+        _outputManager.setColor(false);
+
+        // Check if the user is asking for help on how to use the application.
         if (args.length == 1 && args[0].equals("-h")) {
             _outputManager.send(new OutputMessage(OutputType.HELP,
                     "java −jar scheduler.jar INPUT.dot P [OPTION]\n" +
@@ -82,6 +95,7 @@ public class Scheduler {
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Parsing arguments..."));
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Starting program..."));
 
+        // Try to parse the arguments.
         try {
             _argumentParser.parse(args);
         } catch (ArgumentFormatException e) {
@@ -89,6 +103,12 @@ public class Scheduler {
             return;
         }
 
+        // Check if the user wants to see debug messages.
+        if (_argumentParser.getVerboseOption().getArgs()) {
+            _outputManager.setVerbose(true);
+        }
+
+        // Parse the input file.
         try {
             _offsetTaskMap = _inputParser.parse(_argumentParser.getFile());
             _outputManager.send(new OutputMessage(OutputType.DEBUG,
@@ -101,24 +121,40 @@ public class Scheduler {
         _outputManager.send(new OutputMessage(OutputType.SUCCESS,
                 "Successfully parsed graph!"));
 
+        // Create an algorithm instance for the application to run.
         int numProcessors = _argumentParser.getProcessors();
         int numCores = _argumentParser.getCoresOption().getArgs();
 
+        if (numCores != 0) {
+            if (_argumentParser.getVisualizeOption().getArgs()) {
+                this._outputManager.send(new OutputMessage(OutputType.DEBUG,
+                        "Using parallel algorithm with  visualization."));
+                _algorithm =_algorithmFactory
+                        .getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_PARALLEL_VISUAL, numProcessors, numCores);
+            } else {
+                this._outputManager.send(new OutputMessage(OutputType.DEBUG,
+                        "Using parallel algorithm."));
+                _algorithm = _algorithmFactory
+                        .getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR_PARALLEL, numProcessors, numCores);
+            }
+        } else {
+            if (_argumentParser.getVisualizeOption().getArgs()) {
+                this._outputManager.send(new OutputMessage(OutputType.DEBUG,
+                        "Using sequential algorithm with visualization."));
+                _algorithm = _algorithmFactory
+                        .getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR_VISUAL, numProcessors, numCores);
+            } else {
+                this._outputManager.send(new OutputMessage(OutputType.DEBUG,
+                        "Using sequential algorithm."));
+                _algorithm = _algorithmFactory
+                        .getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR, numProcessors, numCores);
+            }
+        }
 
-        this._outputManager.send(new OutputMessage(OutputType.STATUS, "Executing algorithm..."));
-
-        long start = System.currentTimeMillis();
-
-
-
-        Algorithm algorithm = _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR, numProcessors, numCores);
-        _start = System.currentTimeMillis();
-       _algorithm = _argumentParser.getVisualizeOption().getArgs() ?
-                _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR_VISUAL, numProcessors, numCores) :
-                _algorithmFactory.getAlgorithm(Algorithms.BRANCH_AND_BOUND_A_STAR, numProcessors, numCores);
-
+        // Check if the user wants a visualized run of the algorithm.
         if (_argumentParser.getVisualizeOption().getArgs()) {
             this._outputManager.send(new OutputMessage(OutputType.STATUS, "Starting GUI..."));
+            // Start the GUI.
             PlatformImpl.startup(() ->{
                 GUI gui = new GUI();
                 Stage stage = new Stage();
@@ -133,20 +169,30 @@ public class Scheduler {
             this._outputManager.send(new OutputMessage(OutputType.SUCCESS, "GUI Started!"));
 
         } else {
+            // If the user does not want a visualized version of the algoritm, execute the algorithm.
             executeAlgorithm();
         }
     }
 
+    /**
+     * Sets the output manager used by the application.
+     * @param outputManager output manager used by the application.
+     */
     public void setOutputManager(OutputManager outputManager) {
         this._outputManager = outputManager;
     }
 
+    /**
+     * Executes the algorithm.
+     */
     public void executeAlgorithm() {
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Executing algorithm..."));
 
+        // Execute the algorithm.
         Schedule outputSchedule = _algorithm.execute(_offsetTaskMap);
 
 
+        // Calculates run time.
         long end = System.currentTimeMillis();
         outputSchedule.convertTaskID(_offsetTaskMap);
 
@@ -156,13 +202,20 @@ public class Scheduler {
         _outputManager.send(new OutputMessage(OutputType.DEBUG,
                 "Output Graph: \n" + outputSchedule.getOutputString()));
 
+        // Write the output file.
         writeOutput(outputSchedule);
 
         _outputManager.send(new OutputMessage(OutputType.SUCCESS, "Exiting program..."));
     }
 
+    /**
+     * Write the output file.
+     * @param schedule output schedule to be written to the output file.
+     */
     public void writeOutput(Schedule schedule) {
         this._outputManager.send(new OutputMessage(OutputType.STATUS, "Writing schedule to file..."));
+
+        // Write the output file.
         try {
             if (_argumentParser.getOutputFile() != null) {
                 _outputWriter.serialize(_argumentParser.getOutputFile(), schedule, _offsetTaskMap);

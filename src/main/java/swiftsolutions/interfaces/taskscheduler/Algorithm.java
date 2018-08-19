@@ -16,11 +16,11 @@ public interface Algorithm {
      * @param tasks tasks that will be scheduled
      * @return the valid schedule containing the tasks
      */
-    public Schedule execute(Map<Integer, Task> tasks);
+    Schedule execute(Map<Integer, Task> tasks);
 
     /**
      * Sets the number of processors being scheduled on
      * @param processors
      */
-    public void setProcessors(int processors);
+    void setProcessors(int processors);
 }

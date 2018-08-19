@@ -9,7 +9,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Class that executes the Branch and bound algorithm
+ * Class that executes the Branch and bound algorithm in the GUI. See VisualAlgorithm.
  */
 public class BNBAlgorithmVisual extends VisualAlgorithm {
 

@@ -355,9 +355,9 @@
                   </Pane>
                   <Pane prefHeight="200.0" prefWidth="200.0" styleClass="pane" GridPane.columnIndex="2">
                      <children>
-                        <VBox alignment="CENTER" layoutX="98.0" layoutY="-22.0" prefHeight="200.0" prefWidth="100.0">
+                        <VBox alignment="CENTER" layoutX="74.0" layoutY="-22.0" prefHeight="200.0" prefWidth="100.0">
                            <children>
-                              <Text strokeType="OUTSIDE" strokeWidth="0.0" styleClass="textPrimary" text="Valid Schedules">
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" styleClass="textPrimary" text="New Optimal Schedules">
                                  <font>
                                     <Font size="14.0" />
                                  </font>
