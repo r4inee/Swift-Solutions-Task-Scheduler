@@ -35,7 +35,6 @@ This jar is ready to run.
  - Meeting Minutes
  - Decisions
  - Background Research
- - Documentation on the classes, their functions and their purposes
  - Dependencies (External Libraries) used (or lack thereof)
  - Development Workflow
 
