@@ -24,6 +24,15 @@ public enum OutputType {
      * @return the message with the color prefix and suffix added.
      */
     public String makeMsg(String msg) {
-        return this._color.getPrefix() + "[" + this + "] " + msg + TextColor.RESET.getPrefix();
+        return this._color.getPrefix() + makeNoColorMsg(msg) + TextColor.RESET.getPrefix();
+    }
+
+    /**
+     * Makes a string that will no color if output to the user
+     * @param msg message that will be displayed to the user
+     * @return the message with the prefix added
+     */
+    public String makeNoColorMsg(String msg) {
+        return "[" + this + "] " + msg;
     }
 }

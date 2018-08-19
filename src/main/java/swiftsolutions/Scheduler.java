@@ -74,6 +74,7 @@ public class Scheduler {
 
         // Get the current system time to calculate performance.
         _start = System.currentTimeMillis();
+        _outputManager.setColor(false);
 
         // Check if the user is asking for help on how to use the application.
         if (args.length == 1 && args[0].equals("-h")) {

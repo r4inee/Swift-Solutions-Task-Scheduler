@@ -13,10 +13,15 @@ public class AppOutputManager implements OutputManager {
     private boolean _consoleLog;
     private boolean _verbose;
 
+    private boolean _color;
+
     public AppOutputManager() {
         this._observable = new Observable<>();
         this._consoleLog = true;
         this._verbose = false;
+
+        this._color = false;
+
 
         // Observer for console logging messages.
         this._observable.addObserver((obs, arg) -> {
@@ -24,7 +29,11 @@ public class AppOutputManager implements OutputManager {
                 if (arg.getType() == OutputType.DEBUG && !_verbose) {
                     return;
                 }
-                System.out.println(arg.getType().makeMsg(arg.getMessage()));
+
+                String msg = _color ? arg.getType().makeMsg(arg.getMessage()) :
+                        arg.getType().makeNoColorMsg(arg.getMessage());
+                System.out.println(msg);
+
             }
         });
     }
@@ -63,4 +72,10 @@ public class AppOutputManager implements OutputManager {
     public void setVerbose(boolean status) {
         _verbose = status;
     }
+
+    @Override
+    public void setColor(boolean status) {
+        _color = status;
+    }
+
 }
