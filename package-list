@@ -4,13 +4,15 @@ swiftsolutions.cli.options
 swiftsolutions.exceptions
 swiftsolutions.gui
 swiftsolutions.input
+swiftsolutions.integration
 swiftsolutions.interfaces.input
 swiftsolutions.interfaces.output
 swiftsolutions.interfaces.taskscheduler
 swiftsolutions.output
 swiftsolutions.taskscheduler
 swiftsolutions.taskscheduler.branchandbound
-swiftsolutions.taskscheduler.brandandboundastar
+swiftsolutions.taskscheduler.branchandboundastar
+swiftsolutions.taskscheduler.branchandboundastarparallel
 swiftsolutions.unit
 swiftsolutions.unit.benchmark
 swiftsolutions.unit.benchmark.test
