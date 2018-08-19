@@ -163,7 +163,7 @@ public class BBAAlgorithm implements Algorithm {
             // Check if all the left over tasks can be put in FTO
             Set<Integer> leftOver = new HashSet<>();
             for (int i = 0; i < s.length; i++) {
-                if (s[i][PROCESSOR_INDEX] != EMPTY) {
+                if (s[i][PROCESSOR_INDEX] == EMPTY) {
                     leftOver.add(i);
                 }
             }
@@ -256,14 +256,18 @@ public class BBAAlgorithm implements Algorithm {
                     depth++;
 
                     // if cost is lower than B(est) and depth is max, set current best, go back up tree
-                    if (cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime) <= _B && (depth == _tasks.length)) {
-                        _bestFState = clonedS; // clonedS
-                        _B = cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime);
+                    if (depth == _tasks.length) {
+
                     }
 
-                    // if cost is lower than B(est) and depth is max, recursive call
-                    if (cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime) <= _B && depth < _tasks.length) {
-                        BBA(taskID, j, numFreeTasks, depth, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
+                    if (cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime) <= _B) {
+                        if (depth == _tasks.length) {
+                            _bestFState = clonedS; // clonedS
+                            _B = cost(clonedS, clonedProcEndTimes, taskID, offset, idleTime);
+                        } else {
+                            // if cost is lower than B(est) and depth is max, recursive call
+                            BBA(taskID, j, numFreeTasks, depth, clonedProcEndTimes, clonedTasks, clonedS, idleTime);
+                        }
                     }
 
                     // Reset the offseted values.
