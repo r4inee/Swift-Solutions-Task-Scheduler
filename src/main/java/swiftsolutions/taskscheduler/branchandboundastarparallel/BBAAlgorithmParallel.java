@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class BBAAlgorithmParallel implements ParallelAlgorithm {
@@ -23,7 +24,7 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
     private int[][] _nodeEquivalence;
     private Map<Integer, Task> _taskMap;
     private Set<Cache> _seenSchedules;
-    private int _B;
+    private AtomicInteger _B;
     private int _fSInit;
 
     public static final int EMPTY = -1;
@@ -85,7 +86,7 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
 
         _customPool = new ForkJoinPool(_numCores);
         _taskMap = tasks;
-        _B = 0; // Max int
+        _B = new AtomicInteger(0); // Max int
         int maxBotLevel = 0;
         int idleTime = 0;
 
@@ -118,7 +119,7 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
 
         // Finding the maximum bottle level for cost calculation
         for (int task : _taskMap.keySet()) {
-            _B += _taskMap.get(task).getProcessTime();
+            _B.set(_B.get() + _taskMap.get(task).getProcessTime());
             if (_taskMap.get(task).getBottomLevel() > maxBotLevel) {
                 maxBotLevel = _taskMap.get(task).getBottomLevel();
             }
@@ -134,7 +135,7 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
         }
 
         // Finding a suitable starting bound for the algorithm.
-        _fSInit = Math.max(_B / _numProcessors, maxBotLevel);
+        _fSInit = Math.max(_B.get() / _numProcessors, maxBotLevel);
 
         // Copy to primitive array for FTO.
         int[] orderedTasks = new int[tasks.size()];
@@ -312,13 +313,13 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
                         _depth++;
 
                         // if cost is lower than B(est) and depth is max, set current best, go back up tree
-                        if (cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime) <= _B && (_depth == _tasks.length)) {
+                        if (cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime) <= _B.get() && (_depth == _tasks.length)) {
                             _bestFState = clonedS; // clonedS
-                            _B = cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime);
+                            _B.set(cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime));
                         }
 
                         // if cost is lower than B(est) and depth is max, recursive call
-                        if (cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime) <= _B && _depth < _tasks.length) {
+                        if (cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime) <= _B.get() && _depth < _tasks.length) {
                             // add this to the list of tasks to execute
                             RecursiveBBA recursiveBBA = new RecursiveBBA(taskID, j, _numFreeTasks, _depth, clonedProcEndTimes, clonedTasks, clonedS, _idleTime);
                             freeTaskAllProc.add(recursiveBBA);
@@ -434,9 +435,9 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
             if (index == (orderedTasks.length - 1)) {
                 // Update the current bound.
                 int bound = cost(clonedS, clonedProcEndTimes, task, offset, idleTime);
-                if (bound <= _B) {
+                if (bound <= _B.get()) {
                     _bestFState = clonedS; // clonedS
-                    _B = bound;
+                    _B.set(bound);
                 }
             } else {
                 // Recursive call to schedule next task
