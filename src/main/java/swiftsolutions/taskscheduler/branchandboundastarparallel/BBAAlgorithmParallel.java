@@ -64,12 +64,11 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
 
 
     /**
-     *
      * Overrides ParallelAlgorithm's setCores
      * See ParallelAlgorithm#setCores()
      *
      * @param cores
-     * */
+     */
     @Override
     public void setCores(int cores) {
         _numCores = cores;
@@ -166,15 +165,14 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
     }
 
 
-
     /**
      * This inner class encapsulates all of the core logic of the BBA* algorithm, including pruning such as FTO pruning.
      * It executes the recursive nature of the algorithm in parallel, by delegating each recursive call (which stores
      * state for a given free task/processor combination) to worker threads (running across multiple cores) as
      * typical of a 'work stealing' algorithm.
-     *
+     * <p>
      * All thread management is done automatically.
-     * */
+     */
     private class RecursiveBBA extends RecursiveAction {
 
         private int _previousTask;
@@ -317,11 +315,15 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
 
                         // if cost is lower than B(est) and depth is max, set current best, go back up tree
                         int cost = cost(clonedS, clonedProcEndTimes, taskID, offset, _idleTime);
-                        if (cost < _B.get()) {
-                            if (_depth == _tasks.length) {
-                                _bestFState = clonedS; // clonedS
-                                _B.set(cost);
-                            } else {
+                        if (_depth == _tasks.length) {
+                            synchronized (this) {
+                                if (cost < _B.get()) {
+                                    _bestFState = clonedS; // clonedS
+                                    _B.set(cost);
+                                }
+                            }
+                        } else {
+                            if (cost < _B.get()) {
                                 // add this to list of tasks to execute
                                 RecursiveBBA recursiveBBA = new RecursiveBBA(taskID, j, _numFreeTasks, _depth, clonedProcEndTimes, clonedTasks, clonedS, _idleTime);
                                 freeTaskAllProc.add(recursiveBBA);
@@ -346,10 +348,10 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
      * This is the main method that creates the schedules implemented using the pseudo code of BBA*.
      * It uses the Fork/Join framework to parallelize the search through the solution space.
      *
-     * @param previousTask The previous task which was scheduled
+     * @param previousTask      The previous task which was scheduled
      * @param previousProcessor The previous processor which task was scheduled
-     * @param numFreeTasks The previous number of available tasks
-     * @param depth The current recursive depth
+     * @param numFreeTasks      The previous number of available tasks
+     * @param depth             The current recursive depth
      */
     private void BBA(int previousTask, int previousProcessor, int numFreeTasks, int depth, int[] procEndTimes, int[][] tasks, int[][] s,
                      int idleTime) {
@@ -441,8 +443,6 @@ public class BBAAlgorithmParallel implements ParallelAlgorithm {
             }
         }
     }
-
-
 
 
     /**
